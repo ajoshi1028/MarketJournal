@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String      @id @default(cuid())
+  email     String      @unique
+  name      String?
+  trades    TradeEntry[]
+  createdAt DateTime    @default(now())
+}
+
+model TradeEntry {
+  id            String    @id @default(cuid())
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+
+  ticker        String
+  strategy      String?
+  positionType  String
+  status        TradeStatus @default(OPEN)
+  entryDate     DateTime
+  exitDate      DateTime?
+
+  entryPrice    Float
+  exitPrice     Float?
+  pnlRealized   Float?
+  pnlPercent    Float?
+  maxRisk       Float?
+
+  entryIV       Float?
+  exitIV        Float?
+  notes         String?
+  aiCommentary  String?
+
+  tradeTags     String[] // Optional free-form or structured
+
+  legs          TradeLeg[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model TradeLeg {
+  id         String   @id @default(cuid())
+  trade      TradeEntry @relation(fields: [tradeId], references: [id])
+  tradeId    String
+
+  type       OptionType // call or put
+  action     LegAction  // buy or sell
+  strike     Float
+  expiry     DateTime
+  quantity   Int
+  price      Float
+}
+
+enum OptionType {
+  CALL
+  PUT
+}
+
+enum LegAction {
+  BUY
+  SELL
+}
+
+enum TradeStatus {
+  OPEN
+  CLOSED
+  ROLLED
+  PARTIAL
+}
