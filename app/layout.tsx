@@ -8,11 +8,24 @@ export const metadata = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="bg-gray-50">
+        <nav className="bg-white shadow-sm border-b">
+          <div className="max-w-6xl mx-auto px-8 py-4">
+            <div className="flex justify-between items-center">
+              <h1 className="text-xl font-bold">Market Journal</h1>
+              <div className="space-x-4">
+                <a href="/" className="text-gray-600 hover:text-gray-900">Add Trade</a>
+                <a href="/trades" className="text-gray-600 hover:text-gray-900">View Trades</a>
+              </div>
+            </div>
+          </div>
+        </nav>
+        {children}
+      </body>
     </html>
-  )
+  );
 }

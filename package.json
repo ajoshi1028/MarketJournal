@@ -11,9 +11,11 @@
     "studio": "prisma studio"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.31.4",
     "@prisma/client": "^6.13.0",
     "@types/next": "^8.0.7",
     "next": "^15.4.6",
+    "openai": "^5.15.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
