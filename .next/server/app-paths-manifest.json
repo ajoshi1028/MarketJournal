@@ -1,3 +1,5 @@
 {
-  "/page": "app/page.js"
+  "/api/trades/route": "app/api/trades/route.js",
+  "/page": "app/page.js",
+  "/trades/page": "app/trades/page.js"
 }
