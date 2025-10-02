@@ -1,194 +1,242 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-
-interface Trade {
-  id: string;
-  ticker: string;
-  strategy: string | null;
-  positionType: string;
-  status: string;
-  entryDate: string;
-  entryPrice: number;
-  notes: string | null;
-  aiCommentary: string | null;
-  createdAt: string;
-}
+import { useState, useEffect } from 'react'
+import { useUser } from '@clerk/nextjs'
 
 export default function TradesPage() {
-  const [trades, setTrades] = useState<Trade[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [analyzingTradeId, setAnalyzingTradeId] = useState<string | null>(null);
-  const [deletingTradeId, setDeletingTradeId] = useState<string | null>(null);
+  const { user, isLoaded } = useUser()
+  const [form, setForm] = useState({
+    ticker: '',
+    strategy: '',
+    positionType: '',
+    entryDate: '',
+    entryPrice: '',
+    maxRisk: '',
+    notes: '',
+  })
+  const [loading, setLoading] = useState(false)
+  const [trades, setTrades] = useState([])
 
   useEffect(() => {
-    fetchTrades();
-  }, []);
+    if (isLoaded && user) {
+      fetchTrades()
+    }
+  }, [isLoaded, user])
 
   const fetchTrades = async () => {
     try {
-      const response = await fetch('/api/trades', {
-        headers: { 'x-user-id': 'demo-user' }
-      });
-      const data = await response.json();
-      setTrades(data);
-      setLoading(false);
+      const res = await fetch('/api/trades')
+      if (res.ok) {
+        const data = await res.json()
+        setTrades(data)
+      }
     } catch (error) {
-      console.error('Error fetching trades:', error);
-      setLoading(false);
+      console.error('Error fetching trades:', error)
     }
-  };
+  }
 
-  const analyzeTradeWithAI = async (tradeId: string) => {
-    setAnalyzingTradeId(tradeId);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
     try {
-      const response = await fetch(`/api/trades/analyze/${tradeId}`, {
+      const res = await fetch('/api/trades', {
         method: 'POST',
-        headers: { 'x-user-id': 'demo-user' }
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        await fetchTrades();
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(form),
+      })
+
+      if (res.ok) {
+        alert('Trade submitted successfully!')
+        setForm({
+          ticker: '',
+          strategy: '',
+          positionType: '',
+          entryDate: '',
+          entryPrice: '',
+          maxRisk: '',
+          notes: '',
+        })
+        fetchTrades()
       } else {
-        alert('AI analysis failed');
+        const error = await res.json()
+        alert(`Submission failed: ${error.error}`)
       }
     } catch (error) {
-      console.error('AI analysis error:', error);
-      alert('AI analysis failed');
+      alert('Network error. Please try again.')
+      console.error('Submission error:', error)
     } finally {
-      setAnalyzingTradeId(null);
+      setLoading(false)
     }
-  };
+  }
 
-  const deleteTrade = async (tradeId: string, ticker: string) => {
-    if (!confirm(`Are you sure you want to delete the ${ticker} trade? This action cannot be undone.`)) {
-      return;
-    }
-
-    setDeletingTradeId(tradeId);
-    try {
-      const response = await fetch(`/api/trades?id=${tradeId}`, {
-        method: 'DELETE',
-        headers: { 'x-user-id': 'demo-user' }
-      });
-
-      if (response.ok) {
-        setTrades(trades.filter(trade => trade.id !== tradeId));
-        alert('Trade deleted successfully');
-      } else {
-        alert('Failed to delete trade');
-      }
-    } catch (error) {
-      console.error('Delete error:', error);
-      alert('Failed to delete trade');
-    } finally {
-      setDeletingTradeId(null);
-    }
-  };
-
-  if (loading) return <div className="max-w-6xl mx-auto p-8">Loading trades...</div>;
+  if (!isLoaded) {
+    return <div className="max-w-6xl mx-auto p-8">Loading...</div>
+  }
 
   return (
-    <div className="max-w-7xl mx-auto p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Trade Journal</h1>
-        <a 
-          href="/" 
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Add New Trade
-        </a>
-      </div>
+    <main className="max-w-6xl mx-auto p-8">
+      <div className="grid lg:grid-cols-2 gap-8">
+        {/* Add Trade Form */}
+        <div>
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold mb-2">Add Trade Entry</h1>
+            <p className="text-gray-600">
+              Record your trading activity for analysis and review.
+            </p>
+          </div>
 
-      {trades.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 mb-4">No trades found. Start by adding your first trade.</p>
-          <a 
-            href="/" 
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Add Trade
-          </a>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {trades.map((trade) => (
-            <div key={trade.id} className="bg-white shadow rounded-lg p-6">
-              {/* Trade Header */}
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-4 mb-2">
-                    <h3 className="text-xl font-bold text-gray-900">{trade.ticker}</h3>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      trade.status === 'OPEN' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {trade.status}
-                    </span>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Strategy:</span>
-                      <p className="font-medium">{trade.strategy || 'Not specified'}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Position:</span>
-                      <p className="font-medium">{trade.positionType}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Entry Price:</span>
-                      <p className="font-medium">${trade.entryPrice.toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Date:</span>
-                      <p className="font-medium">{new Date(trade.entryDate).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => analyzeTradeWithAI(trade.id)}
-                    disabled={analyzingTradeId === trade.id}
-                    className="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  >
-                    {analyzingTradeId === trade.id ? 'Analyzing...' : 'AI Analyze'}
-                  </button>
-                  
-                  <button
-                    onClick={() => deleteTrade(trade.id, trade.ticker)}
-                    disabled={deletingTradeId === trade.id}
-                    className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  >
-                    {deletingTradeId === trade.id ? 'Deleting...' : '🗑️ Delete'}
-                  </button>
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ticker Symbol *
+                </label>
+                <input
+                  type="text"
+                  name="ticker"
+                  value={form.ticker}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., AAPL"
+                  required
+                />
               </div>
 
-              {/* Notes */}
-              {trade.notes && (
-                <div className="mb-4">
-                  <span className="text-gray-500 text-sm">Notes:</span>
-                  <p className="text-gray-700 mt-1">{trade.notes}</p>
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Strategy
+                </label>
+                <input
+                  type="text"
+                  name="strategy"
+                  value={form.strategy}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., Put Credit Spread"
+                />
+              </div>
 
-              {/* AI Analysis */}
-              {trade.aiCommentary && (
-                <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border-l-4 border-purple-500">
-                  <div className="flex items-center mb-2">
-                    <span className="text-purple-600 font-semibold text-sm">🤖 AI Analysis</span>
-                  </div>
-                  <p className="text-gray-700 text-sm leading-relaxed">{trade.aiCommentary}</p>
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Position Type *
+                </label>
+                <select
+                  name="positionType"
+                  value={form.positionType}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select position type</option>
+                  <option value="LONG">Long</option>
+                  <option value="SHORT">Short</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Entry Date *
+                </label>
+                <input
+                  type="date"
+                  name="entryDate"
+                  value={form.entryDate}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Entry Price *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="entryPrice"
+                  value={form.entryPrice}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Max Risk
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="maxRisk"
+                  value={form.maxRisk}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
             </div>
-          ))}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notes
+              </label>
+              <textarea
+                name="notes"
+                value={form.notes}
+                onChange={handleChange}
+                rows={3}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Additional notes about this trade..."
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-2 px-4 rounded-md transition-colors"
+            >
+              {loading ? 'Submitting...' : 'Add Trade'}
+            </button>
+          </form>
         </div>
-      )}
-    </div>
-  );
+
+        {/* Trades List */}
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Recent Trades</h2>
+          <div className="space-y-4">
+            {trades.length === 0 ? (
+              <p className="text-gray-500">No trades recorded yet.</p>
+            ) : (
+              trades.map((trade: any) => (
+                <div key={trade.id} className="bg-white p-4 rounded-lg shadow border">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-semibold text-lg">{trade.ticker}</h3>
+                    <span className={`px-2 py-1 rounded text-sm ${
+                      trade.positionType === 'LONG' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {trade.positionType}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 mb-1">Strategy: {trade.strategy || 'N/A'}</p>
+                  <p className="text-gray-600 mb-1">Entry: ${trade.entryPrice}</p>
+                  <p className="text-gray-600 mb-1">Date: {new Date(trade.entryDate).toLocaleDateString()}</p>
+                  {trade.notes && <p className="text-gray-500 text-sm mt-2">{trade.notes}</p>}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
+  )
 }
