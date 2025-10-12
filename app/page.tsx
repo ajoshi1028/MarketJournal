@@ -81,9 +81,9 @@ export default function HomePage() {
       {/* Dashboard for logged-in users */}
       <SignedIn>
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Market Journal Dashboard</h1>
+          <h1 className="text-4xl font-bold mb-4 text-blue-700">Options Journal</h1>
           <p className="text-xl text-gray-600">
-            Welcome back! Track your trades and manage your portfolio.
+            Track your trades and manage your portfolio.
           </p>
         </div>
 
