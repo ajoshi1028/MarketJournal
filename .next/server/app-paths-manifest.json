@@ -1,7 +1,0 @@
-{
-  "/api/trades/route": "app/api/trades/route.js",
-  "/trades/page": "app/trades/page.js",
-  "/page": "app/page.js",
-  "/calculator/page": "app/calculator/page.js",
-  "/account/page": "app/account/page.js"
-}
