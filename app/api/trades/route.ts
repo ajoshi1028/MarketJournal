@@ -7,21 +7,23 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
-const prisma =
-  globalForPrisma.prisma ?? new PrismaClient({ log: ["warn", "error"] });
+const prisma = globalForPrisma.prisma ?? new PrismaClient({ log: ["warn", "error"] });
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
-// ---- helpers ----
+// ---------- helpers ----------
 type Fill = { qty: number; price: number };
 
 function parseFills(maybeFills: any): Fill[] {
   if (!Array.isArray(maybeFills)) return [];
   return maybeFills
-    .map((f) => ({
-      qty: Number(f?.qty),
-      price: Number(f?.price),
-    }))
-    .filter((f) => Number.isFinite(f.qty) && f.qty > 0 && Number.isFinite(f.price) && f.price >= 0);
+    .map((f) => ({ qty: Number(f?.qty), price: Number(f?.price) }))
+    .filter(
+      (f) =>
+        Number.isFinite(f.qty) &&
+        f.qty > 0 &&
+        Number.isFinite(f.price) &&
+        f.price >= 0
+    );
 }
 
 // Weighted average
@@ -32,8 +34,8 @@ function weightedAvg(fills: Fill[]): number | null {
   return value / totalQty;
 }
 
-// Realized P&L using average cost basis; option multiplier = 100
-function computeRealizedPnl(buys: Fill[], sells: Fill[]): number | null {
+// Realized P&L using avg cost; options multiplier = 100 ($0.01 = $1)
+function computeRealizedPnl(buys: Fill[], sells: Fill[]): number {
   const buyQty = buys.reduce((s, f) => s + f.qty, 0);
   const sellQty = sells.reduce((s, f) => s + f.qty, 0);
   if (buyQty === 0 || sellQty === 0) return 0;
@@ -47,6 +49,7 @@ function computeRealizedPnl(buys: Fill[], sells: Fill[]): number | null {
   return perContract * contractsClosed;
 }
 
+// ---------- routes ----------
 export async function GET(_req: NextRequest) {
   try {
     const { userId } = await auth();
@@ -72,7 +75,7 @@ export async function POST(req: NextRequest) {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Ensure a user row
+    // Ensure user row (and we’ll upsert Account below)
     const client = await clerkClient();
     const cu = await client.users.getUser(userId).catch(() => null);
     const email = (
@@ -94,15 +97,15 @@ export async function POST(req: NextRequest) {
     const {
       ticker,
       strategy,
-      positionType,         // "LONG" | "SHORT"
-      entryDate,            // ISO or yyyy-mm-dd
-      sellDate,             // optional
-      buyFills,             // [{qty, price}, ...]
-      sellFills,            // [{qty, price}, ...]
+      positionType, // "LONG" | "SHORT"
+      entryDate,    // ISO or yyyy-mm-dd
+      sellDate,     // optional
+      buyFills,     // [{qty, price}, ...]
+      sellFills,    // [{qty, price}, ...]
       notes,
     } = body ?? {};
 
-    // Basic validation
+    // Validate
     if (!ticker)       return NextResponse.json({ error: "Ticker is required" }, { status: 400 });
     if (!positionType) return NextResponse.json({ error: "Position type is required" }, { status: 400 });
     if (!entryDate)    return NextResponse.json({ error: "Entry date is required" }, { status: 400 });
@@ -110,37 +113,43 @@ export async function POST(req: NextRequest) {
     const buys = parseFills(buyFills);
     const sells = parseFills(sellFills);
 
-    const avgBuy = weightedAvg(buys);
+    const avgBuy  = weightedAvg(buys);
     const avgSell = weightedAvg(sells);
-    const totalBuyQty = buys.reduce((s, f) => s + f.qty, 0);
+    const totalBuyQty  = buys.reduce((s, f) => s + f.qty, 0);
     const totalSellQty = sells.reduce((s, f) => s + f.qty, 0);
-    const realizedPnl = computeRealizedPnl(buys, sells);
+    const realizedPnl  = computeRealizedPnl(buys, sells); // dollars (>= 0 or <= 0)
 
     let outcome: "PROFIT" | "LOSS" | null = null;
-    if (realizedPnl != null) {
-      if (realizedPnl > 0) outcome = "PROFIT";
-      else if (realizedPnl < 0) outcome = "LOSS";
-    }
+    if (realizedPnl > 0) outcome = "PROFIT";
+    else if (realizedPnl < 0) outcome = "LOSS";
 
-    const trade = await prisma.tradeEntry.create({
-      data: {
-        userId,
-        ticker: String(ticker).trim().toUpperCase(),
-        strategy: strategy?.trim() || null,
-        positionType,
-        entryDate: new Date(entryDate),
-        sellDate: sellDate ? new Date(sellDate) : null,
-        buyFills: buys.length ? buys : undefined,
-        sellFills: sells.length ? sells : undefined,
-        totalBuyQty,
-        totalSellQty,
-        avgBuyPrice: avgBuy ?? null,
-        avgSellPrice: avgSell ?? null,
-        realizedPnl: realizedPnl ?? null,
-        outcome,
-        notes: notes?.trim() || null,
-      },
-    });
+    // TRANSACTION: create trade + upsert & increment Account.balance
+    const [trade] = await prisma.$transaction([
+      prisma.tradeEntry.create({
+        data: {
+          userId,
+          ticker: String(ticker).trim().toUpperCase(),
+          strategy: strategy?.trim() || null,
+          positionType,
+          entryDate: new Date(entryDate),
+          sellDate: sellDate ? new Date(sellDate) : null,
+          buyFills: buys.length ? buys : undefined,  // stored as JSON
+          sellFills: sells.length ? sells : undefined,
+          totalBuyQty,
+          totalSellQty,
+          avgBuyPrice:  avgBuy  ?? null,
+          avgSellPrice: avgSell ?? null,
+          realizedPnl:  realizedPnl || 0,
+          outcome,
+          notes: notes?.trim() || null,
+        },
+      }),
+      prisma.account.upsert({
+        where: { userId },
+        update: { balance: { increment: realizedPnl || 0 } },
+        create: { userId, balance: realizedPnl || 0 },
+      }),
+    ]);
 
     return NextResponse.json(trade, { status: 201 });
   } catch (error: any) {
@@ -166,7 +175,18 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Trade not found or unauthorized" }, { status: 404 });
     }
 
-    await prisma.tradeEntry.delete({ where: { id: tradeId } });
+    const delta = trade.realizedPnl ?? 0;
+    const adjust = -delta; // reverse the prior impact
+
+    await prisma.$transaction([
+      prisma.tradeEntry.delete({ where: { id: tradeId } }),
+      prisma.account.upsert({
+        where: { userId },
+        update: { balance: { increment: adjust } }, // works with positive/negative numbers
+        create: { userId, balance: adjust },
+      }),
+    ]);
+
     return NextResponse.json({ message: "Trade deleted successfully" }, { status: 200 });
   } catch (error: any) {
     console.error("DELETE /api/trades error:", error);

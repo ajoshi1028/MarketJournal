@@ -1,5 +1,39 @@
-node_modules
-# Keep environment variables out of version control
-.env
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-/generated/prisma
+# Next.js build output
+.next/
+out/
+dist/
+.vercel/
+.turbo/
+
+# Prisma generated files
+/generated/
+prisma/generated/
+*.db
+
+# Environment files (keep secrets safe)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.vscode/
+.idea/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Coverage/testing
+coverage/
