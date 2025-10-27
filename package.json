@@ -11,14 +11,16 @@
     "studio": "prisma studio"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.913.0",
     "@clerk/nextjs": "^6.33.1",
     "@huggingface/inference": "^4.7.1",
     "@prisma/client": "^6.13.0",
     "@types/next": "^8.0.7",
     "next": "^15.4.6",
-    "openai": "^5.19.1",
+    "openai": "^5.23.2",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "recharts": "^3.2.1"
   },
   "devDependencies": {
     "@types/node": "^20.19.9",

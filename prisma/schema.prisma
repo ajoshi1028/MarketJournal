@@ -33,15 +33,17 @@ model TradeEntry {
   userId String
 
   // core fields
-  ticker       String
-  strategy     String?
-  positionType String
-  entryDate    DateTime
-  sellDate     DateTime?
-  maxRisk      Float?
-  notes        String?
-  outcome      TradeOutcome? @map("outcome")
-
+  ticker         String
+  strategy       String?
+  positionType   String
+  entryDate      DateTime
+  sellDate       DateTime?
+  maxRisk        Float?
+  notes          String?
+  outcome        TradeOutcome? @map("outcome")
+  chartUrl       String?
+  aiAnalysis     String?       @db.Text
+  
   // fills & derived metrics
   buyFills     Json?
   sellFills    Json?

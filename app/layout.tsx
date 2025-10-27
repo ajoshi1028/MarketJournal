@@ -36,7 +36,14 @@ export default function RootLayout({
                       Trades
                     </Link>
                   </li>
-
+                  <li>
+                    <Link
+                      href="/track"
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Track
+                    </Link>
+                  </li>
                   <li>
                     <Link
                       href="/account"
@@ -51,14 +58,6 @@ export default function RootLayout({
                       className="text-blue-600 hover:text-blue-800 font-medium"
                     >
                       Risk Calculator
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/analysis"
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      Analysis
                     </Link>
                   </li>
                 </SignedIn>

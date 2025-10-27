@@ -1,4 +1,4 @@
-// app/trades/page.tsx
+// app/trades/page.tsx  (only the parts that change)
 "use client";
 
 import { useEffect, useState } from "react";
@@ -23,6 +23,7 @@ type Trade = {
   realizedPnl?: number | null;
   outcome?: "PROFIT" | "LOSS" | null;
   notes?: string | null;
+  aiAnalysis?: string | null; // ⬅️ NEW
   createdAt?: string;
   updatedAt?: string;
 };
@@ -31,8 +32,8 @@ type FormState = {
   ticker: string;
   strategy: string;
   positionType: "" | "LONG" | "SHORT";
-  entryDate: string; // yyyy-mm-dd
-  sellDate: string;  // yyyy-mm-dd
+  entryDate: string;
+  sellDate: string;
   buyFills: Fill[];
   sellFills: Fill[];
   notes: string;
@@ -51,6 +52,8 @@ export default function TradesPage() {
     sellFills: [{ qty: "", price: "" }],
     notes: "",
   });
+  const [chartFile, setChartFile] = useState<File | null>(null); // ⬅️ NEW
+
   const [loading, setLoading] = useState(false);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -58,7 +61,6 @@ export default function TradesPage() {
 
   useEffect(() => {
     if (isLoaded && user) fetchTrades();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, user]);
 
   const fetchTrades = async () => {
@@ -66,7 +68,9 @@ export default function TradesPage() {
       const res = await fetch("/api/trades", { cache: "no-store" });
       if (!res.ok) {
         const raw = await res.text().catch(() => "");
-        setLoadError(`${res.status} ${res.statusText}${raw ? ` – ${raw}` : ""}`);
+        setLoadError(
+          `${res.status} ${res.statusText}${raw ? ` – ${raw}` : ""}`
+        );
         return;
       }
       const data = (await res.json()) as Trade[];
@@ -94,7 +98,10 @@ export default function TradesPage() {
   };
 
   const addFillRow = (side: "buyFills" | "sellFills") =>
-    setForm((prev) => ({ ...prev, [side]: [...prev[side], { qty: "", price: "" }] }));
+    setForm((prev) => ({
+      ...prev,
+      [side]: [...prev[side], { qty: "", price: "" }],
+    }));
 
   const removeFillRow = (side: "buyFills" | "sellFills", idx: number) =>
     setForm((prev) => {
@@ -102,9 +109,6 @@ export default function TradesPage() {
       copy.splice(idx, 1);
       return { ...prev, [side]: copy.length ? copy : [{ qty: "", price: "" }] };
     });
-
-  const cleanFillsForPost = (fills: Fill) =>
-    null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,12 +128,10 @@ export default function TradesPage() {
         return;
       }
 
+      // Convert fills to numbers & filter invalids
       const toArray = (ary: Fill[]) =>
         ary
-          .map((f) => ({
-            qty: Number(f.qty),
-            price: Number(f.price),
-          }))
+          .map((f) => ({ qty: Number(f.qty), price: Number(f.price) }))
           .filter(
             (f) =>
               Number.isFinite(f.qty) &&
@@ -138,23 +140,20 @@ export default function TradesPage() {
               f.price >= 0
           );
 
-      const payload = {
-        ticker: form.ticker.trim().toUpperCase(),
-        strategy: form.strategy.trim() || null,
-        positionType: form.positionType as "LONG" | "SHORT",
-        entryDate: new Date(form.entryDate).toISOString(),
-        sellDate: form.sellDate ? new Date(form.sellDate).toISOString() : null,
-        buyFills: toArray(form.buyFills),
-        sellFills: toArray(form.sellFills),
-        notes: form.notes.trim() || null,
-      };
+      // Build multipart form data (so we can include the image file)
+      const fd = new FormData();
+      fd.append("ticker", form.ticker.trim().toUpperCase());
+      fd.append("strategy", form.strategy.trim());
+      fd.append("positionType", form.positionType);
+      fd.append("entryDate", new Date(form.entryDate).toISOString());
+      if (form.sellDate)
+        fd.append("sellDate", new Date(form.sellDate).toISOString());
+      fd.append("buyFills", JSON.stringify(toArray(form.buyFills)));
+      fd.append("sellFills", JSON.stringify(toArray(form.sellFills)));
+      fd.append("notes", form.notes.trim());
+      if (chartFile) fd.append("chartImage", chartFile); // ⬅️ NEW
 
-      const res = await fetch("/api/trades", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
+      const res = await fetch("/api/trades", { method: "POST", body: fd });
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         let msg = text;
@@ -168,8 +167,6 @@ export default function TradesPage() {
 
       await res.json();
       alert("Trade submitted successfully!");
-
-      // Reset form
       setForm({
         ticker: "",
         strategy: "",
@@ -180,8 +177,8 @@ export default function TradesPage() {
         sellFills: [{ qty: "", price: "" }],
         notes: "",
       });
-
-      fetchTrades();
+      setChartFile(null);
+      await fetchTrades();
     } catch (err) {
       console.log(err);
       alert("Network error. Please try again.");
@@ -190,65 +187,67 @@ export default function TradesPage() {
     }
   };
 
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this trade?")) return;
-    try {
-      setDeletingId(id);
-      const res = await fetch(`/api/trades?id=${encodeURIComponent(id)}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({} as any));
-        alert(`Failed to delete trade: ${data?.error || res.statusText}`);
-        return;
-      }
-      setTrades((prev) => prev.filter((t) => t.id !== id));
-    } catch (e) {
-      alert("Network error deleting trade.");
-    } finally {
-      setDeletingId(null);
-    }
-  }
-
   const fmtUSD = (n: number | null | undefined) =>
     typeof n === "number"
       ? n.toLocaleString("en-US", { style: "currency", currency: "USD" })
       : "—";
-
   const fmtPrice = (p?: number | null) =>
-    typeof p === "number" ? p.toFixed(2) : "—"; // option quote price (0.70 = $70 per contract)
-
+    typeof p === "number" ? p.toFixed(2) : "—";
   const fmtDate = (iso?: string | null) => {
     if (!iso) return "—";
     const d = new Date(iso);
     return isNaN(+d) ? "—" : d.toLocaleDateString();
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this trade? This cannot be undone.")) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/trades/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        let msg = txt;
+        try {
+          const j = JSON.parse(txt);
+          msg = j?.error || j?.message || j?.details || txt;
+        } catch {}
+        alert(`Delete failed: ${res.status} ${res.statusText}\n${msg}`);
+        return;
+      }
+      await res.json().catch(() => null);
+      await fetchTrades();
+    } catch (err: any) {
+      console.error(err);
+      alert("Network error while deleting. Please try again.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   if (!isLoaded) return <div className="max-w-6xl mx-auto p-8">Loading...</div>;
 
   return (
     <main className="max-w-6xl mx-auto p-8">
-      {loadError && (
-        <div className="mb-4 rounded border border-red-300 bg-red-50 px-3 py-2 text-red-800">
-          Failed to load trades: {loadError}
-        </div>
-      )}
+      {/* ... errors, titles ... */}
 
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Form */}
         <div>
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">Add Trade Entry</h1>
-            <p className="text-gray-600">
-              Record buys/sells with multiple fills; P&L is computed automatically (multiplier 100).
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
+          {/* header ... */}
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-6 bg-white p-6 rounded-lg shadow"
+          >
+            {/* your existing grid for fields ... */}
+            {/* === Core trade fields === */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Ticker */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Ticker Symbol *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ticker Symbol *
+                </label>
                 <input
                   type="text"
                   value={form.ticker}
@@ -261,7 +260,9 @@ export default function TradesPage() {
 
               {/* Strategy */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Strategy</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Strategy
+                </label>
                 <input
                   type="text"
                   value={form.strategy}
@@ -273,10 +274,14 @@ export default function TradesPage() {
 
               {/* Position Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Position Type *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Position Type *
+                </label>
                 <select
                   value={form.positionType}
-                  onChange={(e) => setField("positionType", e.target.value as any)}
+                  onChange={(e) =>
+                    setField("positionType", e.target.value as any)
+                  }
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
@@ -286,9 +291,11 @@ export default function TradesPage() {
                 </select>
               </div>
 
-              {/* Entry / Sell Dates */}
+              {/* Dates */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Entry Date *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Entry Date *
+                </label>
                 <input
                   type="date"
                   value={form.entryDate}
@@ -298,7 +305,9 @@ export default function TradesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sell Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Sell Date
+                </label>
                 <input
                   type="date"
                   value={form.sellDate}
@@ -308,10 +317,12 @@ export default function TradesPage() {
               </div>
             </div>
 
-            {/* Buy fills */}
+            {/* === Buy fills === */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">Buy Fills (contracts & price)</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Buy Fills (contracts & price)
+                </label>
                 <button
                   type="button"
                   onClick={() => addFillRow("buyFills")}
@@ -328,7 +339,9 @@ export default function TradesPage() {
                       min={1}
                       placeholder="Contracts (e.g., 10)"
                       value={f.qty}
-                      onChange={(e) => updateFill("buyFills", i, "qty", e.target.value)}
+                      onChange={(e) =>
+                        updateFill("buyFills", i, "qty", e.target.value)
+                      }
                       className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <input
@@ -337,7 +350,9 @@ export default function TradesPage() {
                       min={0}
                       placeholder="Price (e.g., 0.70)"
                       value={f.price}
-                      onChange={(e) => updateFill("buyFills", i, "price", e.target.value)}
+                      onChange={(e) =>
+                        updateFill("buyFills", i, "price", e.target.value)
+                      }
                       className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button
@@ -355,10 +370,12 @@ export default function TradesPage() {
               </p>
             </div>
 
-            {/* Sell fills */}
+            {/* === Sell fills === */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">Sell Fills (contracts & price)</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Sell Fills (contracts & price)
+                </label>
                 <button
                   type="button"
                   onClick={() => addFillRow("sellFills")}
@@ -375,7 +392,9 @@ export default function TradesPage() {
                       min={1}
                       placeholder="Contracts (e.g., 10)"
                       value={f.qty}
-                      onChange={(e) => updateFill("sellFills", i, "qty", e.target.value)}
+                      onChange={(e) =>
+                        updateFill("sellFills", i, "qty", e.target.value)
+                      }
                       className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <input
@@ -384,7 +403,9 @@ export default function TradesPage() {
                       min={0}
                       placeholder="Price (e.g., 1.10)"
                       value={f.price}
-                      onChange={(e) => updateFill("sellFills", i, "price", e.target.value)}
+                      onChange={(e) =>
+                        updateFill("sellFills", i, "price", e.target.value)
+                      }
                       className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button
@@ -399,9 +420,11 @@ export default function TradesPage() {
               </div>
             </div>
 
-            {/* Notes */}
+            {/* === Notes === */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notes
+              </label>
               <textarea
                 rows={3}
                 value={form.notes}
@@ -409,6 +432,26 @@ export default function TradesPage() {
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Additional notes about this trade..."
               />
+            </div>
+
+            {/* Image upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Insert a picture of the chart within the trade timeframe
+                (optional)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setChartFile(e.target.files?.[0] ?? null)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+              />
+              {chartFile && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Selected: {chartFile.name} (
+                  {Math.round((chartFile.size / 1024) * 10) / 10} KB)
+                </p>
+              )}
             </div>
 
             <button
@@ -429,11 +472,6 @@ export default function TradesPage() {
               <p className="text-gray-500">No trades recorded yet.</p>
             ) : (
               trades.map((t) => {
-                const dateRange =
-                  `${fmtDate(t.entryDate)}${
-                    t.sellDate ? ` - ${fmtDate(t.sellDate)}` : ""
-                  }`;
-
                 const outcomeBox =
                   t.outcome === "PROFIT"
                     ? "bg-green-50 border-green-200"
@@ -446,6 +484,10 @@ export default function TradesPage() {
                     ? "bg-green-100 text-green-800"
                     : "bg-red-100 text-red-800";
 
+                const dateRange = `${fmtDate(t.entryDate)}${
+                  t.sellDate ? ` - ${fmtDate(t.sellDate)}` : ""
+                }`;
+
                 return (
                   <div
                     key={t.id}
@@ -455,7 +497,9 @@ export default function TradesPage() {
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-lg">{t.ticker}</h3>
                         {t.strategy && (
-                          <span className="text-sm text-gray-600">• {t.strategy}</span>
+                          <span className="text-sm text-gray-600">
+                            • {t.strategy}
+                          </span>
                         )}
                       </div>
                       <span className={`px-2 py-1 rounded text-xs ${posBadge}`}>
@@ -468,10 +512,12 @@ export default function TradesPage() {
                     <div className="grid grid-cols-2 gap-x-6 text-sm mt-2">
                       <div>
                         <p className="text-gray-600">
-                          Bought: {t.totalBuyQty ?? 0} @ {fmtPrice(t.avgBuyPrice)}
+                          Bought: {t.totalBuyQty ?? 0} @{" "}
+                          {fmtPrice(t.avgBuyPrice)}
                         </p>
                         <p className="text-gray-600">
-                          Sold: {t.totalSellQty ?? 0} @ {fmtPrice(t.avgSellPrice)}
+                          Sold: {t.totalSellQty ?? 0} @{" "}
+                          {fmtPrice(t.avgSellPrice)}
                         </p>
                       </div>
                       <div>
@@ -480,11 +526,24 @@ export default function TradesPage() {
                         </p>
                         {t.outcome && (
                           <p className="text-gray-700">
-                            Outcome: {t.outcome === "PROFIT" ? "Profit" : "Loss"}
+                            Outcome:{" "}
+                            {t.outcome === "PROFIT" ? "Profit" : "Loss"}
                           </p>
                         )}
                       </div>
                     </div>
+
+                    {/* AI analysis block */}
+                    {t.aiAnalysis && (
+                      <div className="mt-3 p-3 rounded border bg-gray-50">
+                        <p className="text-sm font-semibold mb-1">
+                          AI Analysis
+                        </p>
+                        <p className="text-sm whitespace-pre-wrap">
+                          {t.aiAnalysis}
+                        </p>
+                      </div>
+                    )}
 
                     {t.notes && (
                       <p className="text-gray-500 text-sm mt-2">{t.notes}</p>
