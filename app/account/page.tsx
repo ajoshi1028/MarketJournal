@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import ImportTrades from "./ImportTrades";
 import {
   LineChart,
   Line,
@@ -14,6 +16,17 @@ import {
   Legend,
 } from "recharts";
 
+type Trade = {
+  id: string;
+  ticker: string;
+  strategy: string | null;
+  positionType: "LONG" | "SHORT";
+  entryDate: string;
+  sellDate?: string | null;
+  realizedPnl?: number | null;
+  outcome?: "PROFIT" | "LOSS" | null;
+};
+
 type Bucket = "day" | "week" | "month" | "year";
 
 type Analytics = {
@@ -23,6 +36,8 @@ type Analytics = {
   winsByTicker: { name: string; value: number }[];
   totals: { trades: number; wins: number; losses: number };
 };
+
+type DailyPnlMap = Record<string, number>;
 
 const COLORS = [
   "#818cf8",
@@ -34,46 +49,120 @@ const COLORS = [
   "#64748b",
 ];
 
+function toDateKey(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(+d)) return null;
+  return d.toISOString().slice(0, 10);
+}
+
+function buildDailyPnl(trades: Trade[]): DailyPnlMap {
+  const map: DailyPnlMap = {};
+  for (const t of trades) {
+    const key = toDateKey(t.sellDate) ?? toDateKey(t.entryDate);
+    if (!key) continue;
+    map[key] = (map[key] ?? 0) + (t.realizedPnl ?? 0);
+  }
+  return map;
+}
+
+function getCalendarCells(currentMonth: Date) {
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const first = new Date(year, month, 1);
+  const last = new Date(year, month + 1, 0);
+  const firstWeekday = first.getDay();
+
+  const cells: ({ iso: string; day: number } | null)[] = [];
+  for (let i = 0; i < firstWeekday; i++) cells.push(null);
+  for (let d = 1; d <= last.getDate(); d++) {
+    const date = new Date(year, month, d);
+    cells.push({ iso: date.toISOString().slice(0, 10), day: d });
+  }
+  return cells;
+}
+
 export default function AccountPage() {
-  const [bucket, setBucket] = useState<Bucket>("month");
-  const [data, setData] = useState<Analytics | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { isLoaded } = useUser();
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [loadingTrades, setLoadingTrades] = useState(false);
 
-  const currentGrowth = useMemo(
-    () =>
-      data?.growth?.length
-        ? data.growth[data.growth.length - 1].cumulativePnl
-        : 0,
-    [data],
-  );
+  const [analyticsBucket, setAnalyticsBucket] = useState<Bucket>("month");
+  const [analyticsData, setAnalyticsData] = useState<Analytics | null>(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
-  const winRate = useMemo(() => {
-    if (!data?.totals || data.totals.trades === 0) return null;
-    const decided = data.totals.wins + data.totals.losses;
-    if (decided === 0) return null;
-    return ((data.totals.wins / decided) * 100).toFixed(1);
-  }, [data]);
+  async function fetchTrades() {
+    try {
+      setLoadingTrades(true);
+      const res = await fetch("/api/trades", { cache: "no-store" });
+      if (!res.ok) {
+        setLoadError(`${res.status} ${res.statusText}`);
+        return;
+      }
+      const data = await res.json();
+      setTrades(Array.isArray(data) ? data : []);
+      setLoadError(null);
+    } catch (e: unknown) {
+      setLoadError(e instanceof Error ? e.message : "Network error");
+    } finally {
+      setLoadingTrades(false);
+    }
+  }
 
   useEffect(() => {
+    if (!isLoaded) return;
+    fetchTrades();
+    const id = setInterval(fetchTrades, 30_000);
+    return () => clearInterval(id);
+  }, [isLoaded]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
     let alive = true;
     (async () => {
-      setLoading(true);
+      setLoadingAnalytics(true);
       try {
-        const res = await fetch(`/api/account/analytics?bucket=${bucket}`, {
-          cache: "no-store",
-        });
+        const res = await fetch(
+          `/api/account/analytics?bucket=${analyticsBucket}`,
+          { cache: "no-store" },
+        );
         const j = (await res.json()) as Analytics;
-        if (alive) setData(j);
+        if (alive) setAnalyticsData(j);
       } catch (e) {
         console.error(e);
       } finally {
-        if (alive) setLoading(false);
+        if (alive) setLoadingAnalytics(false);
       }
     })();
     return () => {
       alive = false;
     };
-  }, [bucket]);
+  }, [isLoaded, analyticsBucket]);
+
+  const dailyPnl = useMemo(() => buildDailyPnl(trades), [trades]);
+  const cells = useMemo(() => getCalendarCells(currentMonth), [currentMonth]);
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const monthLabel = currentMonth.toLocaleString("default", {
+    month: "long",
+    year: "numeric",
+  });
+
+  const currentGrowth = useMemo(
+    () =>
+      analyticsData?.growth?.length
+        ? analyticsData.growth[analyticsData.growth.length - 1].cumulativePnl
+        : 0,
+    [analyticsData],
+  );
+
+  const winRate = useMemo(() => {
+    if (!analyticsData?.totals) return null;
+    const decided = analyticsData.totals.wins + analyticsData.totals.losses;
+    if (decided === 0) return null;
+    return ((analyticsData.totals.wins / decided) * 100).toFixed(1);
+  }, [analyticsData]);
 
   const tooltipStyle = {
     contentStyle: {
@@ -86,14 +175,27 @@ export default function AccountPage() {
     labelStyle: { color: "#9ca3af" },
   };
 
+  if (!isLoaded)
+    return (
+      <main className="max-w-7xl mx-auto px-6 py-8 text-gray-400">
+        Loading...
+      </main>
+    );
+
   return (
     <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-white mb-1">My Account</h1>
         <p className="text-gray-500">
-          Portfolio analytics update as trades realize P&L.
+          Daily P&L calendar, growth analytics, and trade imports.
         </p>
       </div>
+
+      {loadError && (
+        <div className="rounded-lg border border-red-500/30 bg-loss-muted px-4 py-3 text-red-400 text-sm">
+          Failed to load trades: {loadError}
+        </div>
+      )}
 
       {/* Stats bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -111,7 +213,7 @@ export default function AccountPage() {
         <div className="card p-5">
           <p className="text-sm text-gray-500 mb-1">Total Trades</p>
           <p className="text-2xl font-bold text-white">
-            {data?.totals?.trades ?? 0}
+            {analyticsData?.totals?.trades ?? 0}
           </p>
         </div>
         <div className="card p-5">
@@ -121,12 +223,10 @@ export default function AccountPage() {
           </p>
         </div>
         <div className="card p-5 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Bucket</p>
-          </div>
+          <p className="text-sm text-gray-500">Bucket</p>
           <select
-            value={bucket}
-            onChange={(e) => setBucket(e.target.value as Bucket)}
+            value={analyticsBucket}
+            onChange={(e) => setAnalyticsBucket(e.target.value as Bucket)}
             className="input-field w-auto"
           >
             <option value="day">Day</option>
@@ -137,7 +237,102 @@ export default function AccountPage() {
         </div>
       </div>
 
-      {/* Line chart */}
+      {/* P&L Calendar */}
+      <section className="card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white">P&L Calendar</h2>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setCurrentMonth(
+                  (prev) =>
+                    new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
+                )
+              }
+              className="btn-ghost text-sm"
+            >
+              Prev
+            </button>
+            <span className="text-sm font-medium text-gray-300 min-w-[140px] text-center">
+              {monthLabel}
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                setCurrentMonth(
+                  (prev) =>
+                    new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
+                )
+              }
+              className="btn-ghost text-sm"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-3 flex items-center gap-4 text-xs text-gray-500">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded bg-profit/30 border border-profit/50" />
+            Profit
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded bg-loss/30 border border-loss/50" />
+            Loss
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded bg-surface-200 border border-surface-400" />
+            No trades
+          </span>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 text-xs">
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+            <div
+              key={d}
+              className="text-center font-medium text-gray-600 mb-1"
+            >
+              {d}
+            </div>
+          ))}
+
+          {cells.map((cell, idx) => {
+            if (!cell) return <div key={idx} className="h-14" />;
+
+            const pnl = dailyPnl[cell.iso] ?? 0;
+            let bg = "bg-surface-200 border-surface-400 text-gray-500";
+            if (pnl > 0)
+              bg = "bg-profit/15 border-profit/30 text-profit";
+            if (pnl < 0)
+              bg = "bg-loss/15 border-loss/30 text-loss";
+
+            const isToday = cell.iso === todayKey;
+
+            return (
+              <div
+                key={cell.iso}
+                className={`h-14 rounded-lg border flex flex-col items-center justify-center transition-colors ${bg} ${
+                  isToday ? "ring-2 ring-accent/50 ring-offset-1 ring-offset-surface" : ""
+                }`}
+              >
+                <div className="text-xs font-semibold">{cell.day}</div>
+                {pnl !== 0 && (
+                  <div className="text-[10px] font-mono mt-0.5">
+                    {pnl > 0 ? "+" : ""}${Math.abs(pnl).toFixed(0)}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {loadingTrades && (
+          <p className="mt-3 text-xs text-gray-600">Updating...</p>
+        )}
+      </section>
+
+      {/* Growth chart */}
       <section className="card p-6">
         <h3 className="text-lg font-semibold text-white mb-4">
           Growth Over Time
@@ -145,7 +340,7 @@ export default function AccountPage() {
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
-              data={data?.growth ?? []}
+              data={analyticsData?.growth ?? []}
               margin={{ top: 10, right: 20, left: 10, bottom: 0 }}
             >
               <XAxis
@@ -182,24 +377,27 @@ export default function AccountPage() {
       <section className="grid md:grid-cols-3 gap-5">
         <PieCard
           title="Wins: Long vs Short"
-          data={data?.winsLongShort ?? []}
+          data={analyticsData?.winsLongShort ?? []}
           tooltipStyle={tooltipStyle}
         />
         <PieCard
           title="Losses: Long vs Short"
-          data={data?.lossesLongShort ?? []}
+          data={analyticsData?.lossesLongShort ?? []}
           tooltipStyle={tooltipStyle}
         />
         <PieCard
           title="Wins by Ticker"
-          data={data?.winsByTicker ?? []}
+          data={analyticsData?.winsByTicker ?? []}
           tooltipStyle={tooltipStyle}
         />
       </section>
 
-      {loading && (
-        <p className="text-sm text-gray-500">Loading analytics...</p>
+      {loadingAnalytics && (
+        <p className="text-sm text-gray-600">Loading analytics...</p>
       )}
+
+      {/* Import trades */}
+      <ImportTrades onImported={fetchTrades} />
     </main>
   );
 }
