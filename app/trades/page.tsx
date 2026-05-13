@@ -1,4 +1,3 @@
-// app/trades/page.tsx  (only the parts that change)
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,7 +7,6 @@ type Fill = { qty: string; price: string };
 
 type Trade = {
   id: string;
-  userId: string;
   ticker: string;
   strategy: string | null;
   positionType: "LONG" | "SHORT";
@@ -23,9 +21,7 @@ type Trade = {
   realizedPnl?: number | null;
   outcome?: "PROFIT" | "LOSS" | null;
   notes?: string | null;
-  aiAnalysis?: string | null; // ⬅️ NEW
-  createdAt?: string;
-  updatedAt?: string;
+  aiAnalysis?: string | null;
 };
 
 type FormState = {
@@ -39,21 +35,36 @@ type FormState = {
   notes: string;
 };
 
+const EMPTY_FORM: FormState = {
+  ticker: "",
+  strategy: "",
+  positionType: "",
+  entryDate: "",
+  sellDate: "",
+  buyFills: [{ qty: "", price: "" }],
+  sellFills: [{ qty: "", price: "" }],
+  notes: "",
+};
+
+const fmtUSD = (n: number | null | undefined) =>
+  typeof n === "number"
+    ? n.toLocaleString("en-US", { style: "currency", currency: "USD" })
+    : "—";
+
+const fmtPrice = (p?: number | null) =>
+  typeof p === "number" ? p.toFixed(2) : "—";
+
+const fmtDate = (iso?: string | null) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return isNaN(+d) ? "—" : d.toLocaleDateString();
+};
+
 export default function TradesPage() {
   const { user, isLoaded } = useUser();
 
-  const [form, setForm] = useState<FormState>({
-    ticker: "",
-    strategy: "",
-    positionType: "",
-    entryDate: "",
-    sellDate: "",
-    buyFills: [{ qty: "", price: "" }],
-    sellFills: [{ qty: "", price: "" }],
-    notes: "",
-  });
-  const [chartFile, setChartFile] = useState<File | null>(null); // ⬅️ NEW
-
+  const [form, setForm] = useState<FormState>({ ...EMPTY_FORM });
+  const [chartFile, setChartFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -63,72 +74,59 @@ export default function TradesPage() {
     if (isLoaded && user) fetchTrades();
   }, [isLoaded, user]);
 
-  const fetchTrades = async () => {
+  async function fetchTrades() {
     try {
       const res = await fetch("/api/trades", { cache: "no-store" });
       if (!res.ok) {
-        const raw = await res.text().catch(() => "");
-        setLoadError(
-          `${res.status} ${res.statusText}${raw ? ` – ${raw}` : ""}`
-        );
+        setLoadError(`${res.status} ${res.statusText}`);
         return;
       }
-      const data = (await res.json()) as Trade[];
+      const data = await res.json();
       setTrades(Array.isArray(data) ? data : []);
       setLoadError(null);
-    } catch (error: any) {
-      setLoadError(`Network error: ${error?.message ?? error}`);
+    } catch (err: unknown) {
+      setLoadError(err instanceof Error ? err.message : "Network error");
     }
-  };
+  }
 
-  const setField = (name: keyof FormState, value: any) =>
+  function setField(name: keyof FormState, value: unknown) {
     setForm((prev) => ({ ...prev, [name]: value }));
+  }
 
-  const updateFill = (
+  function updateFill(
     side: "buyFills" | "sellFills",
     index: number,
     key: keyof Fill,
-    value: string
-  ) => {
+    value: string,
+  ) {
     setForm((prev) => {
       const copy = [...prev[side]];
       copy[index] = { ...copy[index], [key]: value };
       return { ...prev, [side]: copy };
     });
-  };
+  }
 
-  const addFillRow = (side: "buyFills" | "sellFills") =>
+  function addFillRow(side: "buyFills" | "sellFills") {
     setForm((prev) => ({
       ...prev,
       [side]: [...prev[side], { qty: "", price: "" }],
     }));
+  }
 
-  const removeFillRow = (side: "buyFills" | "sellFills", idx: number) =>
+  function removeFillRow(side: "buyFills" | "sellFills", idx: number) {
     setForm((prev) => {
       const copy = [...prev[side]];
       copy.splice(idx, 1);
       return { ...prev, [side]: copy.length ? copy : [{ qty: "", price: "" }] };
     });
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.positionType || !form.entryDate || !form.ticker.trim()) return;
+
     setLoading(true);
-
     try {
-      if (!form.positionType) {
-        alert("Please choose a position type.");
-        return;
-      }
-      if (!form.entryDate) {
-        alert("Please select an entry date.");
-        return;
-      }
-      if (!form.ticker.trim()) {
-        alert("Please enter a ticker.");
-        return;
-      }
-
-      // Convert fills to numbers & filter invalids
       const toArray = (ary: Fill[]) =>
         ary
           .map((f) => ({ qty: Number(f.qty), price: Number(f.price) }))
@@ -137,10 +135,9 @@ export default function TradesPage() {
               Number.isFinite(f.qty) &&
               f.qty > 0 &&
               Number.isFinite(f.price) &&
-              f.price >= 0
+              f.price >= 0,
           );
 
-      // Build multipart form data (so we can include the image file)
       const fd = new FormData();
       fd.append("ticker", form.ticker.trim().toUpperCase());
       fd.append("strategy", form.strategy.trim());
@@ -151,420 +148,367 @@ export default function TradesPage() {
       fd.append("buyFills", JSON.stringify(toArray(form.buyFills)));
       fd.append("sellFills", JSON.stringify(toArray(form.sellFills)));
       fd.append("notes", form.notes.trim());
-      if (chartFile) fd.append("chartImage", chartFile); // ⬅️ NEW
+      if (chartFile) fd.append("chartImage", chartFile);
 
       const res = await fetch("/api/trades", { method: "POST", body: fd });
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         let msg = text;
         try {
-          const j = JSON.parse(text);
-          msg = j?.error || j?.message || j?.details || text;
+          msg = JSON.parse(text)?.error || text;
         } catch {}
-        alert(`Submit failed: ${res.status} ${res.statusText}\n${msg}`);
+        alert(`Submit failed: ${msg}`);
         return;
       }
 
-      await res.json();
-      alert("Trade submitted successfully!");
-      setForm({
-        ticker: "",
-        strategy: "",
-        positionType: "",
-        entryDate: "",
-        sellDate: "",
-        buyFills: [{ qty: "", price: "" }],
-        sellFills: [{ qty: "", price: "" }],
-        notes: "",
-      });
+      setForm({ ...EMPTY_FORM });
       setChartFile(null);
       await fetchTrades();
-    } catch (err) {
-      console.log(err);
+    } catch {
       alert("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const fmtUSD = (n: number | null | undefined) =>
-    typeof n === "number"
-      ? n.toLocaleString("en-US", { style: "currency", currency: "USD" })
-      : "—";
-  const fmtPrice = (p?: number | null) =>
-    typeof p === "number" ? p.toFixed(2) : "—";
-  const fmtDate = (iso?: string | null) => {
-    if (!iso) return "—";
-    const d = new Date(iso);
-    return isNaN(+d) ? "—" : d.toLocaleDateString();
-  };
-
-  const handleDelete = async (id: string) => {
+  async function handleDelete(id: string) {
     if (!confirm("Delete this trade? This cannot be undone.")) return;
     setDeletingId(id);
     try {
-      const res = await fetch(`/api/trades/${encodeURIComponent(id)}`, {
+      const res = await fetch(`/api/trades?id=${encodeURIComponent(id)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        let msg = txt;
+        const text = await res.text().catch(() => "");
+        let msg = text;
         try {
-          const j = JSON.parse(txt);
-          msg = j?.error || j?.message || j?.details || txt;
+          msg = JSON.parse(text)?.error || text;
         } catch {}
-        alert(`Delete failed: ${res.status} ${res.statusText}\n${msg}`);
+        alert(`Delete failed: ${msg}`);
         return;
       }
-      await res.json().catch(() => null);
       await fetchTrades();
-    } catch (err: any) {
-      console.error(err);
-      alert("Network error while deleting. Please try again.");
+    } catch {
+      alert("Network error while deleting.");
     } finally {
       setDeletingId(null);
     }
-  };
+  }
 
-  if (!isLoaded) return <div className="max-w-6xl mx-auto p-8">Loading...</div>;
+  if (!isLoaded)
+    return (
+      <div className="max-w-7xl mx-auto p-8 text-gray-400">Loading...</div>
+    );
 
   return (
-    <main className="max-w-6xl mx-auto p-8">
-      {/* ... errors, titles ... */}
+    <main className="max-w-7xl mx-auto px-6 py-8">
+      {loadError && (
+        <div className="mb-6 rounded-lg border border-red-500/30 bg-loss-muted px-4 py-3 text-red-400 text-sm">
+          Failed to load trades: {loadError}
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* Form */}
+        {/* ---- FORM ---- */}
         <div>
-          {/* header ... */}
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-6 bg-white p-6 rounded-lg shadow"
-          >
-            {/* your existing grid for fields ... */}
-            {/* === Core trade fields === */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Ticker */}
+          <h2 className="text-2xl font-bold text-white mb-5">New Trade</h2>
+          <form onSubmit={handleSubmit} className="card p-6 space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ticker Symbol *
-                </label>
+                <label className="label">Ticker *</label>
                 <input
                   type="text"
                   value={form.ticker}
                   onChange={(e) => setField("ticker", e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-field"
                   placeholder="e.g., AAPL"
                   required
                 />
               </div>
-
-              {/* Strategy */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Strategy
-                </label>
+                <label className="label">Strategy</label>
                 <input
                   type="text"
                   value={form.strategy}
                   onChange={(e) => setField("strategy", e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-field"
                   placeholder="e.g., Put Credit Spread"
                 />
               </div>
-
-              {/* Position Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Position Type *
-                </label>
+                <label className="label">Position Type *</label>
                 <select
                   value={form.positionType}
-                  onChange={(e) =>
-                    setField("positionType", e.target.value as any)
-                  }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => setField("positionType", e.target.value)}
+                  className="input-field"
                   required
                 >
-                  <option value="">Select position type</option>
+                  <option value="">Select</option>
                   <option value="LONG">Long</option>
                   <option value="SHORT">Short</option>
                 </select>
               </div>
-
-              {/* Dates */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Entry Date *
-                </label>
+                <label className="label">Entry Date *</label>
                 <input
                   type="date"
                   value={form.entryDate}
                   onChange={(e) => setField("entryDate", e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-field"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Sell Date
-                </label>
+              <div className="md:col-span-2">
+                <label className="label">Sell Date</label>
                 <input
                   type="date"
                   value={form.sellDate}
                   onChange={(e) => setField("sellDate", e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-field"
                 />
               </div>
             </div>
 
-            {/* === Buy fills === */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Buy Fills (contracts & price)
-                </label>
-                <button
-                  type="button"
-                  onClick={() => addFillRow("buyFills")}
-                  className="text-blue-600 hover:underline text-sm"
-                >
-                  + Add Buy Fill
-                </button>
-              </div>
-              <div className="space-y-2">
-                {form.buyFills.map((f, i) => (
-                  <div key={`buy-${i}`} className="grid grid-cols-3 gap-2">
-                    <input
-                      type="number"
-                      min={1}
-                      placeholder="Contracts (e.g., 10)"
-                      value={f.qty}
-                      onChange={(e) =>
-                        updateFill("buyFills", i, "qty", e.target.value)
-                      }
-                      className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      placeholder="Price (e.g., 0.70)"
-                      value={f.price}
-                      onChange={(e) =>
-                        updateFill("buyFills", i, "price", e.target.value)
-                      }
-                      className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeFillRow("buyFills", i)}
-                      className="border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Reminder: options quotes use a 100x multiplier (0.01 = $1).
-              </p>
-            </div>
+            {/* Buy Fills */}
+            <FillsSection
+              label="Buy Fills"
+              fills={form.buyFills}
+              side="buyFills"
+              onUpdate={updateFill}
+              onAdd={addFillRow}
+              onRemove={removeFillRow}
+            />
 
-            {/* === Sell fills === */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Sell Fills (contracts & price)
-                </label>
-                <button
-                  type="button"
-                  onClick={() => addFillRow("sellFills")}
-                  className="text-blue-600 hover:underline text-sm"
-                >
-                  + Add Sell Fill
-                </button>
-              </div>
-              <div className="space-y-2">
-                {form.sellFills.map((f, i) => (
-                  <div key={`sell-${i}`} className="grid grid-cols-3 gap-2">
-                    <input
-                      type="number"
-                      min={1}
-                      placeholder="Contracts (e.g., 10)"
-                      value={f.qty}
-                      onChange={(e) =>
-                        updateFill("sellFills", i, "qty", e.target.value)
-                      }
-                      className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      placeholder="Price (e.g., 1.10)"
-                      value={f.price}
-                      onChange={(e) =>
-                        updateFill("sellFills", i, "price", e.target.value)
-                      }
-                      className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeFillRow("sellFills", i)}
-                      className="border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Sell Fills */}
+            <FillsSection
+              label="Sell Fills"
+              fills={form.sellFills}
+              side="sellFills"
+              onUpdate={updateFill}
+              onAdd={addFillRow}
+              onRemove={removeFillRow}
+            />
 
-            {/* === Notes === */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Notes
-              </label>
+              <label className="label">Notes</label>
               <textarea
                 rows={3}
                 value={form.notes}
                 onChange={(e) => setField("notes", e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Additional notes about this trade..."
+                className="input-field resize-none"
+                placeholder="Additional notes..."
               />
             </div>
 
-            {/* Image upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Insert a picture of the chart within the trade timeframe
-                (optional)
-              </label>
+              <label className="label">Chart Image (optional)</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={(e) => setChartFile(e.target.files?.[0] ?? null)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4
+                           file:rounded-lg file:border-0 file:text-sm file:font-medium
+                           file:bg-surface-300 file:text-gray-200 hover:file:bg-surface-400
+                           file:cursor-pointer file:transition-colors"
               />
               {chartFile && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Selected: {chartFile.name} (
-                  {Math.round((chartFile.size / 1024) * 10) / 10} KB)
+                  {chartFile.name} ({Math.round(chartFile.size / 1024)} KB)
                 </p>
               )}
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-2 px-4 rounded-md transition-colors"
-            >
+            <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
               {loading ? "Submitting..." : "Add Trade"}
             </button>
           </form>
         </div>
 
-        {/* Trades List */}
+        {/* ---- TRADE LIST ---- */}
         <div>
-          <h2 className="text-2xl font-bold mb-4">Recent Trades</h2>
+          <h2 className="text-2xl font-bold text-white mb-5">Recent Trades</h2>
           <div className="space-y-4">
             {trades.length === 0 ? (
               <p className="text-gray-500">No trades recorded yet.</p>
             ) : (
-              trades.map((t) => {
-                const outcomeBox =
-                  t.outcome === "PROFIT"
-                    ? "bg-green-50 border-green-200"
-                    : t.outcome === "LOSS"
-                    ? "bg-red-50 border-red-200"
-                    : "bg-white";
-
-                const posBadge =
-                  t.positionType === "LONG"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800";
-
-                const dateRange = `${fmtDate(t.entryDate)}${
-                  t.sellDate ? ` - ${fmtDate(t.sellDate)}` : ""
-                }`;
-
-                return (
-                  <div
-                    key={t.id}
-                    className={`p-4 rounded-lg shadow border ${outcomeBox}`}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-lg">{t.ticker}</h3>
-                        {t.strategy && (
-                          <span className="text-sm text-gray-600">
-                            • {t.strategy}
-                          </span>
-                        )}
-                      </div>
-                      <span className={`px-2 py-1 rounded text-xs ${posBadge}`}>
-                        {t.positionType}
-                      </span>
-                    </div>
-
-                    <p className="text-gray-700 mb-1">Date: {dateRange}</p>
-
-                    <div className="grid grid-cols-2 gap-x-6 text-sm mt-2">
-                      <div>
-                        <p className="text-gray-600">
-                          Bought: {t.totalBuyQty ?? 0} @{" "}
-                          {fmtPrice(t.avgBuyPrice)}
-                        </p>
-                        <p className="text-gray-600">
-                          Sold: {t.totalSellQty ?? 0} @{" "}
-                          {fmtPrice(t.avgSellPrice)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="font-medium">
-                          Realized P&amp;L: {fmtUSD(t.realizedPnl)}
-                        </p>
-                        {t.outcome && (
-                          <p className="text-gray-700">
-                            Outcome:{" "}
-                            {t.outcome === "PROFIT" ? "Profit" : "Loss"}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* AI analysis block */}
-                    {t.aiAnalysis && (
-                      <div className="mt-3 p-3 rounded border bg-gray-50">
-                        <p className="text-sm font-semibold mb-1">
-                          AI Analysis
-                        </p>
-                        <p className="text-sm whitespace-pre-wrap">
-                          {t.aiAnalysis}
-                        </p>
-                      </div>
-                    )}
-
-                    {t.notes && (
-                      <p className="text-gray-500 text-sm mt-2">{t.notes}</p>
-                    )}
-
-                    <div className="mt-3">
-                      <button
-                        onClick={() => handleDelete(t.id)}
-                        disabled={deletingId === t.id}
-                        className="bg-red-500 hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm px-3 py-1 rounded"
-                      >
-                        {deletingId === t.id ? "Deleting..." : "Delete"}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
+              trades.map((t) => (
+                <TradeCard
+                  key={t.id}
+                  trade={t}
+                  deleting={deletingId === t.id}
+                  onDelete={handleDelete}
+                />
+              ))
             )}
           </div>
         </div>
       </div>
     </main>
+  );
+}
+
+function FillsSection({
+  label,
+  fills,
+  side,
+  onUpdate,
+  onAdd,
+  onRemove,
+}: {
+  label: string;
+  fills: Fill[];
+  side: "buyFills" | "sellFills";
+  onUpdate: (s: "buyFills" | "sellFills", i: number, k: keyof Fill, v: string) => void;
+  onAdd: (s: "buyFills" | "sellFills") => void;
+  onRemove: (s: "buyFills" | "sellFills", i: number) => void;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label className="label mb-0">{label}</label>
+        <button
+          type="button"
+          onClick={() => onAdd(side)}
+          className="text-accent-light hover:text-accent text-sm font-medium transition-colors"
+        >
+          + Add Fill
+        </button>
+      </div>
+      <div className="space-y-2">
+        {fills.map((f, i) => (
+          <div key={`${side}-${i}`} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+            <input
+              type="number"
+              min={1}
+              placeholder="Contracts"
+              value={f.qty}
+              onChange={(e) => onUpdate(side, i, "qty", e.target.value)}
+              className="input-field"
+            />
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              placeholder="Price"
+              value={f.price}
+              onChange={(e) => onUpdate(side, i, "price", e.target.value)}
+              className="input-field"
+            />
+            <button
+              type="button"
+              onClick={() => onRemove(side, i)}
+              className="btn-ghost text-gray-500 hover:text-red-400 px-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        ))}
+      </div>
+      {side === "buyFills" && (
+        <p className="text-xs text-gray-600 mt-1">
+          Options quotes use a 100x multiplier (0.01 = $1).
+        </p>
+      )}
+    </div>
+  );
+}
+
+function TradeCard({
+  trade: t,
+  deleting,
+  onDelete,
+}: {
+  trade: Trade;
+  deleting: boolean;
+  onDelete: (id: string) => void;
+}) {
+  const borderColor =
+    t.outcome === "PROFIT"
+      ? "border-profit/30"
+      : t.outcome === "LOSS"
+        ? "border-loss/30"
+        : "border-surface-300";
+
+  const bgTint =
+    t.outcome === "PROFIT"
+      ? "bg-profit-muted"
+      : t.outcome === "LOSS"
+        ? "bg-loss-muted"
+        : "bg-surface-100";
+
+  const posBadge =
+    t.positionType === "LONG"
+      ? "bg-profit/15 text-profit"
+      : "bg-loss/15 text-loss";
+
+  return (
+    <div className={`p-4 rounded-xl border ${borderColor} ${bgTint}`}>
+      <div className="flex justify-between items-start mb-2">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-white text-lg">{t.ticker}</h3>
+          {t.strategy && (
+            <span className="text-sm text-gray-500">{t.strategy}</span>
+          )}
+        </div>
+        <span className={`badge ${posBadge}`}>{t.positionType}</span>
+      </div>
+
+      <p className="text-gray-400 text-sm mb-2">
+        {fmtDate(t.entryDate)}
+        {t.sellDate ? ` → ${fmtDate(t.sellDate)}` : ""}
+      </p>
+
+      <div className="grid grid-cols-2 gap-x-6 text-sm">
+        <div className="space-y-0.5">
+          <p className="text-gray-500">
+            Bought: {t.totalBuyQty ?? 0} @ {fmtPrice(t.avgBuyPrice)}
+          </p>
+          <p className="text-gray-500">
+            Sold: {t.totalSellQty ?? 0} @ {fmtPrice(t.avgSellPrice)}
+          </p>
+        </div>
+        <div className="space-y-0.5">
+          <p className="font-medium text-gray-200">
+            P&L: {fmtUSD(t.realizedPnl)}
+          </p>
+          {t.outcome && (
+            <p
+              className={
+                t.outcome === "PROFIT" ? "text-profit" : "text-loss"
+              }
+            >
+              {t.outcome === "PROFIT" ? "Profit" : "Loss"}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {t.aiAnalysis && (
+        <div className="mt-3 p-3 rounded-lg bg-surface-200/50 border border-surface-300">
+          <p className="text-xs font-semibold text-accent-light mb-1">
+            AI Analysis
+          </p>
+          <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
+            {t.aiAnalysis}
+          </p>
+        </div>
+      )}
+
+      {t.notes && (
+        <p className="text-gray-500 text-sm mt-2 italic">{t.notes}</p>
+      )}
+
+      <div className="mt-3">
+        <button
+          onClick={() => onDelete(t.id)}
+          disabled={deleting}
+          className="btn-danger disabled:opacity-50"
+        >
+          {deleting ? "Deleting..." : "Delete"}
+        </button>
+      </div>
+    </div>
   );
 }

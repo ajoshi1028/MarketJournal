@@ -1,4 +1,3 @@
-// app/account/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -26,12 +25,12 @@ type Analytics = {
 };
 
 const COLORS = [
-  "#2563eb",
+  "#818cf8",
+  "#22c55e",
   "#ef4444",
-  "#16a34a",
   "#f59e0b",
-  "#9333ea",
   "#14b8a6",
+  "#a78bfa",
   "#64748b",
 ];
 
@@ -40,15 +39,20 @@ export default function AccountPage() {
   const [data, setData] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Optional: if you persist balance in Account, fetch & show it here
-  // For now just show the running P&L last point as “growth”
   const currentGrowth = useMemo(
     () =>
       data?.growth?.length
         ? data.growth[data.growth.length - 1].cumulativePnl
         : 0,
-    [data]
+    [data],
   );
+
+  const winRate = useMemo(() => {
+    if (!data?.totals || data.totals.trades === 0) return null;
+    const decided = data.totals.wins + data.totals.losses;
+    if (decided === 0) return null;
+    return ((data.totals.wins / decided) * 100).toFixed(1);
+  }, [data]);
 
   useEffect(() => {
     let alive = true;
@@ -71,34 +75,59 @@ export default function AccountPage() {
     };
   }, [bucket]);
 
+  const tooltipStyle = {
+    contentStyle: {
+      backgroundColor: "#12121a",
+      border: "1px solid #2a2a38",
+      borderRadius: "0.5rem",
+      color: "#e5e7eb",
+      fontSize: "0.875rem",
+    },
+    labelStyle: { color: "#9ca3af" },
+  };
+
   return (
-    <main className="max-w-6xl mx-auto p-8 space-y-8">
+    <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold mb-2">My Account</h1>
-        <p className="text-gray-600">
-          Your portfolio visuals update as trades realize P&amp;L.
+        <h1 className="text-3xl font-bold text-white mb-1">My Account</h1>
+        <p className="text-gray-500">
+          Portfolio analytics update as trades realize P&L.
         </p>
       </div>
 
-      {/* Balance/Growth card + range */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-blue-800 mb-1">
-            Current Growth (Realized P&L)
-          </h2>
-          <p className="text-3xl font-bold text-blue-900">
+      {/* Stats bar */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="card p-5">
+          <p className="text-sm text-gray-500 mb-1">Realized P&L</p>
+          <p
+            className={`text-2xl font-bold ${currentGrowth >= 0 ? "text-profit" : "text-loss"}`}
+          >
             {currentGrowth.toLocaleString("en-US", {
               style: "currency",
               currency: "USD",
             })}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <label className="text-sm text-blue-900">Bucket</label>
+        <div className="card p-5">
+          <p className="text-sm text-gray-500 mb-1">Total Trades</p>
+          <p className="text-2xl font-bold text-white">
+            {data?.totals?.trades ?? 0}
+          </p>
+        </div>
+        <div className="card p-5">
+          <p className="text-sm text-gray-500 mb-1">Win Rate</p>
+          <p className="text-2xl font-bold text-accent-light">
+            {winRate ? `${winRate}%` : "—"}
+          </p>
+        </div>
+        <div className="card p-5 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-500 mb-1">Bucket</p>
+          </div>
           <select
             value={bucket}
             onChange={(e) => setBucket(e.target.value as Bucket)}
-            className="border rounded-md px-3 py-2"
+            className="input-field w-auto"
           >
             <option value="day">Day</option>
             <option value="week">Week</option>
@@ -109,24 +138,40 @@ export default function AccountPage() {
       </div>
 
       {/* Line chart */}
-      <section className="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 className="text-xl font-semibold mb-4">Growth Over Time</h3>
-        <div className="h-64">
+      <section className="card p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">
+          Growth Over Time
+        </h3>
+        <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={data?.growth ?? []}
               margin={{ top: 10, right: 20, left: 10, bottom: 0 }}
             >
-              <XAxis dataKey="bucket" tick={{ fontSize: 12 }} />
-              <YAxis tickFormatter={(v) => `$${v}`} width={70} />
+              <XAxis
+                dataKey="bucket"
+                tick={{ fontSize: 12, fill: "#6b7280" }}
+                axisLine={{ stroke: "#2a2a38" }}
+                tickLine={false}
+              />
+              <YAxis
+                tickFormatter={(v) => `$${v}`}
+                width={70}
+                tick={{ fontSize: 12, fill: "#6b7280" }}
+                axisLine={{ stroke: "#2a2a38" }}
+                tickLine={false}
+              />
               <Tooltip
-                formatter={(v: any) => `$${Number(v).toLocaleString()}`}
+                formatter={(v: number) => [`$${v.toLocaleString()}`, "P&L"]}
+                {...tooltipStyle}
               />
               <Line
                 type="monotone"
                 dataKey="cumulativePnl"
+                stroke="#818cf8"
                 strokeWidth={2}
                 dot={false}
+                activeDot={{ r: 4, fill: "#818cf8" }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -134,78 +179,67 @@ export default function AccountPage() {
       </section>
 
       {/* Pie charts */}
-      <section className="grid md:grid-cols-3 gap-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-3">Wins: Long vs Short</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data?.winsLongShort ?? []}
-                  dataKey="value"
-                  nameKey="name"
-                  outerRadius={80}
-                  label
-                >
-                  {(data?.winsLongShort ?? []).map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Legend />
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-3">Losses: Long vs Short</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data?.lossesLongShort ?? []}
-                  dataKey="value"
-                  nameKey="name"
-                  outerRadius={80}
-                  label
-                >
-                  {(data?.lossesLongShort ?? []).map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Legend />
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-3">Wins by Ticker</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data?.winsByTicker ?? []}
-                  dataKey="value"
-                  nameKey="name"
-                  outerRadius={80}
-                  label
-                >
-                  {(data?.winsByTicker ?? []).map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Legend />
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+      <section className="grid md:grid-cols-3 gap-5">
+        <PieCard
+          title="Wins: Long vs Short"
+          data={data?.winsLongShort ?? []}
+          tooltipStyle={tooltipStyle}
+        />
+        <PieCard
+          title="Losses: Long vs Short"
+          data={data?.lossesLongShort ?? []}
+          tooltipStyle={tooltipStyle}
+        />
+        <PieCard
+          title="Wins by Ticker"
+          data={data?.winsByTicker ?? []}
+          tooltipStyle={tooltipStyle}
+        />
       </section>
 
-      {loading && <p className="text-sm text-gray-500">Loading analytics…</p>}
+      {loading && (
+        <p className="text-sm text-gray-500">Loading analytics...</p>
+      )}
     </main>
+  );
+}
+
+function PieCard({
+  title,
+  data,
+  tooltipStyle,
+}: {
+  title: string;
+  data: { name: string; value: number }[];
+  tooltipStyle: Record<string, unknown>;
+}) {
+  return (
+    <div className="card p-6">
+      <h3 className="text-base font-semibold text-white mb-3">{title}</h3>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              outerRadius={80}
+              label
+              labelLine={false}
+              stroke="#0a0a0f"
+              strokeWidth={2}
+            >
+              {data.map((_, i) => (
+                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              ))}
+            </Pie>
+            <Legend
+              wrapperStyle={{ fontSize: "0.75rem", color: "#9ca3af" }}
+            />
+            <Tooltip {...tooltipStyle} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }

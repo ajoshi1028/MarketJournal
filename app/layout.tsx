@@ -13,78 +13,71 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorBackground: "#12121a",
+          colorInputBackground: "#1a1a24",
+          colorPrimary: "#6366f1",
+          colorText: "#e5e7eb",
+          colorTextSecondary: "#9ca3af",
+        },
+      }}
+    >
       <html lang="en">
         <body>
-          <nav className="bg-gray-100 border-b p-4">
-            <div className="max-w-6xl mx-auto flex justify-between items-center">
-              <ul className="flex space-x-6">
-                <li>
-                  <Link
-                    href="/"
-                    className="text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    Home
-                  </Link>
-                </li>
+          <nav className="sticky top-0 z-50 bg-surface-50/80 backdrop-blur-xl border-b border-surface-300">
+            <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-3">
+              <div className="flex items-center gap-8">
+                <Link
+                  href="/"
+                  className="text-lg font-bold tracking-tight text-white"
+                >
+                  <span className="text-accent-light">M</span>arket
+                  <span className="text-accent-light">J</span>ournal
+                </Link>
+
                 <SignedIn>
-                  <li>
-                    <Link
-                      href="/trades"
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
+                  <div className="hidden md:flex items-center gap-1">
+                    <Link href="/trades" className="nav-link">
                       Trades
                     </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/track"
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
+                    <Link href="/track" className="nav-link">
                       Track
                     </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/account"
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      My Account
+                    <Link href="/account" className="nav-link">
+                      Account
                     </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/calculator"
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      Risk Calculator
+                    <Link href="/calculator" className="nav-link">
+                      Calculator
                     </Link>
-                  </li>
+                  </div>
                 </SignedIn>
-              </ul>
+              </div>
 
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center gap-3">
                 <SignedOut>
-                  <Link
-                    href="/sign-in"
-                    className="text-blue-600 hover:text-blue-800 font-medium"
-                  >
+                  <Link href="/sign-in" className="nav-link text-sm">
                     Sign In
                   </Link>
-                  <Link
-                    href="/sign-up"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-                  >
-                    Sign Up
+                  <Link href="/sign-up" className="btn-primary text-sm">
+                    Get Started
                   </Link>
                 </SignedOut>
                 <SignedIn>
-                  <UserButton afterSignOutUrl="/" />
+                  <UserButton
+                    afterSignOutUrl="/"
+                    appearance={{
+                      elements: {
+                        avatarBox: "w-8 h-8 ring-2 ring-surface-400",
+                      },
+                    }}
+                  />
                 </SignedIn>
               </div>
             </div>
           </nav>
-          {children}
+          <div className="min-h-[calc(100vh-57px)]">{children}</div>
         </body>
       </html>
     </ClerkProvider>
