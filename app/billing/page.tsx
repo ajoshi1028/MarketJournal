@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 const FREE_FEATURES = [
@@ -24,6 +24,14 @@ const PRO_FEATURES = [
 ];
 
 export default function BillingPage() {
+  return (
+    <Suspense fallback={<main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 text-gray-400">Loading...</main>}>
+      <BillingContent />
+    </Suspense>
+  );
+}
+
+function BillingContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
