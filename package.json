@@ -19,7 +19,7 @@
     "csv-parse": "^6.1.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
-    "next": "^16.2.6",
+    "next": "^15.5.18",
     "openai": "^5.23.2",
     "papaparse": "^5.5.3",
     "react": "^19.1.1",
