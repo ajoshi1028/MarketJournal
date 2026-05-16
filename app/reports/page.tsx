@@ -111,7 +111,7 @@ export default function ReportsPage() {
         margin: { left: 14, right: 14 },
       });
 
-      y = (doc as unknown as Record<string, number>).lastAutoTable?.finalY + 12 || y + 100;
+      y = ((doc as unknown as Record<string, { finalY: number }>).lastAutoTable?.finalY ?? y) + 12 || y +100;
 
       if (data.byStrategy.length > 0) {
         doc.setFontSize(13);
@@ -134,7 +134,7 @@ export default function ReportsPage() {
           margin: { left: 14, right: 14 },
         });
 
-        y = (doc as unknown as Record<string, number>).lastAutoTable?.finalY + 12 || y + 60;
+        y = ((doc as unknown as Record<string, { finalY: number }>).lastAutoTable?.finalY ?? y) + 12 || y +60;
       }
 
       if (data.byTicker.length > 0) {
@@ -163,7 +163,7 @@ export default function ReportsPage() {
           margin: { left: 14, right: 14 },
         });
 
-        y = (doc as unknown as Record<string, number>).lastAutoTable?.finalY + 12 || y + 60;
+        y = ((doc as unknown as Record<string, { finalY: number }>).lastAutoTable?.finalY ?? y) + 12 || y +60;
       }
 
       if (data.monthlyPerformance.length > 0) {

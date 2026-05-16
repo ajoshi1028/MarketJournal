@@ -47,12 +47,13 @@ export async function POST(req: NextRequest) {
         where: { stripeCustomerId: customerId },
       });
       if (user) {
+        const periodEnd = (sub as unknown as Record<string, unknown>).current_period_end as number | undefined;
         await prisma.user.update({
           where: { id: user.id },
           data: {
             subscriptionStatus: sub.status,
-            subscriptionEndDate: sub.current_period_end
-              ? new Date(sub.current_period_end * 1000)
+            subscriptionEndDate: periodEnd
+              ? new Date(periodEnd * 1000)
               : null,
           },
         });
