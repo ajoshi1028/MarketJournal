@@ -43,8 +43,10 @@ const fmtPrice = (p?: number | null) =>
 
 const fmtDate = (iso?: string | null) => {
   if (!iso) return "—";
-  const d = new Date(iso);
-  return isNaN(+d) ? "—" : d.toLocaleDateString();
+  const s = iso.slice(0, 10);
+  const [y, m, d] = s.split("-").map(Number);
+  if (!y || !m || !d) return "—";
+  return `${m}/${d}/${y}`;
 };
 
 export default function TrackPage() {

@@ -58,8 +58,11 @@ const fmtPrice = (p?: number | null) =>
 
 const fmtDate = (iso?: string | null) => {
   if (!iso) return "—";
-  const d = new Date(iso);
-  return isNaN(+d) ? "—" : d.toLocaleDateString();
+  // Parse as UTC to avoid timezone shift
+  const s = iso.slice(0, 10);
+  const [y, m, d] = s.split("-").map(Number);
+  if (!y || !m || !d) return "—";
+  return `${m}/${d}/${y}`;
 };
 
 export default function TradesPage() {
@@ -144,9 +147,9 @@ export default function TradesPage() {
       fd.append("ticker", form.ticker.trim().toUpperCase());
       fd.append("strategy", form.strategy.trim());
       fd.append("positionType", form.positionType);
-      fd.append("entryDate", new Date(form.entryDate).toISOString());
+      fd.append("entryDate", form.entryDate + "T12:00:00.000Z");
       if (form.sellDate)
-        fd.append("sellDate", new Date(form.sellDate).toISOString());
+        fd.append("sellDate", form.sellDate + "T12:00:00.000Z");
       fd.append("buyFills", JSON.stringify(toArray(form.buyFills)));
       fd.append("sellFills", JSON.stringify(toArray(form.sellFills)));
       fd.append("notes", form.notes.trim());
