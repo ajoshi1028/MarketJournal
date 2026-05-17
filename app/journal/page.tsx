@@ -322,12 +322,13 @@ export default function JournalPage() {
                 <p className="text-xs text-gray-600">No entries yet.</p>
               ) : (
                 recentEntries.map((e) => {
-                  const d = new Date(e.date + "T12:00:00");
-                  const isSelected = e.date.slice(0, 10) === selectedDate;
+                  const dateStr = e.date.slice(0, 10);
+                  const d = new Date(dateStr + "T12:00:00");
+                  const isSelected = dateStr === selectedDate;
                   return (
                     <button
                       key={e.id}
-                      onClick={() => setSelectedDate(e.date.slice(0, 10))}
+                      onClick={() => setSelectedDate(dateStr)}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                         isSelected
                           ? "bg-accent/15 text-accent-light"
