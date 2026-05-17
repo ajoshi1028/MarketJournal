@@ -114,8 +114,13 @@ export async function POST(req: NextRequest) {
       ticker: get("ticker"),
       strategy: get("strategy") || null,
       positionType: get("positionType"),
+      optionType: get("optionType") || null,
+      strike: get("strike") || null,
+      expiry: get("expiry") || null,
       entryDate: get("entryDate"),
+      entryTime: get("entryTime") || null,
       sellDate: get("sellDate") || null,
+      exitTime: get("exitTime") || null,
       buyFills: JSON.parse(get("buyFills") || "[]"),
       sellFills: JSON.parse(get("sellFills") || "[]"),
       notes: get("notes") || null,
@@ -131,8 +136,13 @@ export async function POST(req: NextRequest) {
     ? sanitizeString(payload.strategy, MAX_STRATEGY_LENGTH)
     : null;
   const positionType = String(payload.positionType ?? "");
+  const optionType = payload.optionType ? String(payload.optionType) : null;
+  const strike = payload.strike ? Number(payload.strike) : null;
+  const expiry = payload.expiry ? new Date(String(payload.expiry)) : null;
   const entryDate = String(payload.entryDate ?? "");
+  const entryTime = payload.entryTime ? String(payload.entryTime) : null;
   const sellDate = payload.sellDate ? String(payload.sellDate) : null;
+  const exitTime = payload.exitTime ? String(payload.exitTime) : null;
   const notes = payload.notes
     ? sanitizeString(payload.notes, MAX_NOTES_LENGTH)
     : null;
@@ -180,8 +190,13 @@ export async function POST(req: NextRequest) {
       ticker,
       strategy,
       positionType,
+      optionType: optionType && ["CALL", "PUT"].includes(optionType) ? optionType : null,
+      strike: strike && Number.isFinite(strike) ? strike : null,
+      expiry: expiry && !isNaN(expiry.getTime()) ? expiry : null,
       entryDate: parsedEntry,
+      entryTime,
       sellDate: parsedSell,
+      exitTime,
       buyFills: buys.length ? buys : undefined,
       sellFills: sells.length ? sells : undefined,
       totalBuyQty,

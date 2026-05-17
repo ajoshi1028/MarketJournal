@@ -42,8 +42,13 @@ model TradeEntry {
   ticker         String
   strategy       String?
   positionType   String
+  optionType     String?
+  strike         Float?
+  expiry         DateTime?
   entryDate      DateTime
+  entryTime      String?
   sellDate       DateTime?
+  exitTime       String?
   maxRisk        Float?
   notes          String?
   outcome        TradeOutcome? @map("outcome")
