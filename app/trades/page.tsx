@@ -34,8 +34,7 @@ type Trade = {
 type FormState = {
   ticker: string;
   strategy: string;
-  positionType: "" | "LONG" | "SHORT";
-  optionType: "" | "CALL" | "PUT";
+  positionType: "" | "CALL" | "PUT";
   strike: string;
   expiry: string;
   entryDate: string;
@@ -51,7 +50,6 @@ const EMPTY_FORM: FormState = {
   ticker: "",
   strategy: "",
   positionType: "",
-  optionType: "",
   strike: "",
   expiry: "",
   entryDate: "",
@@ -161,8 +159,8 @@ export default function TradesPage() {
       const fd = new FormData();
       fd.append("ticker", form.ticker.trim().toUpperCase());
       fd.append("strategy", form.strategy.trim());
-      fd.append("positionType", form.positionType);
-      if (form.optionType) fd.append("optionType", form.optionType);
+      fd.append("positionType", form.positionType === "CALL" ? "LONG" : "SHORT");
+      fd.append("optionType", form.positionType);
       if (form.strike) fd.append("strike", form.strike);
       if (form.expiry) fd.append("expiry", form.expiry + "T12:00:00.000Z");
       fd.append("entryDate", form.entryDate + "T12:00:00.000Z");
@@ -261,7 +259,7 @@ export default function TradesPage() {
                 />
               </div>
               <div>
-                <label className="label">Position Type *</label>
+                <label className="label">Position *</label>
                 <select
                   value={form.positionType}
                   onChange={(e) => setField("positionType", e.target.value)}
@@ -269,8 +267,8 @@ export default function TradesPage() {
                   required
                 >
                   <option value="">Select</option>
-                  <option value="LONG">Long</option>
-                  <option value="SHORT">Short</option>
+                  <option value="CALL">Call</option>
+                  <option value="PUT">Put</option>
                 </select>
               </div>
               <div>
@@ -282,18 +280,6 @@ export default function TradesPage() {
                   className="input-field"
                   required
                 />
-              </div>
-              <div>
-                <label className="label">Option Type</label>
-                <select
-                  value={form.optionType}
-                  onChange={(e) => setField("optionType", e.target.value)}
-                  className="input-field"
-                >
-                  <option value="">N/A</option>
-                  <option value="CALL">Call</option>
-                  <option value="PUT">Put</option>
-                </select>
               </div>
               <div>
                 <label className="label">Strike Price</label>
@@ -514,8 +500,9 @@ function TradeCard({
         ? "bg-loss-muted"
         : "bg-surface-100";
 
+  const displayType = t.optionType || t.positionType;
   const posBadge =
-    t.positionType === "LONG"
+    displayType === "CALL" || t.positionType === "LONG"
       ? "bg-profit/15 text-profit"
       : "bg-loss/15 text-loss";
 
@@ -524,9 +511,9 @@ function TradeCard({
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center gap-2 flex-wrap">
           <h3 className="font-semibold text-white text-lg">{t.ticker}</h3>
-          {t.optionType && t.strike && (
+          {t.strike && (
             <span className="text-sm text-accent-light font-medium">
-              {t.strike} {t.optionType}
+              {t.strike} {displayType}
               {t.expiry ? ` (${fmtDate(t.expiry)})` : ""}
             </span>
           )}
@@ -534,7 +521,7 @@ function TradeCard({
             <span className="text-sm text-gray-500">{t.strategy}</span>
           )}
         </div>
-        <span className={`badge ${posBadge}`}>{t.positionType}</span>
+        <span className={`badge ${posBadge}`}>{displayType}</span>
       </div>
 
       <p className="text-gray-400 text-sm mb-2">
