@@ -33,6 +33,28 @@ export default function RootLayout({
             color: "#1f1f1f",
             fontWeight: "500",
           },
+          userButtonPopoverCard: {
+            backgroundColor: "#1e1e2a",
+            borderColor: "#2a2a3a",
+          },
+          userButtonPopoverActionButton: {
+            color: "#e5e7eb",
+          },
+          userButtonPopoverActionButtonText: {
+            color: "#e5e7eb",
+          },
+          userButtonPopoverActionButtonIcon: {
+            color: "#9ca3af",
+          },
+          userButtonPopoverFooter: {
+            "& a": { color: "#9ca3af" },
+          },
+          userPreviewMainIdentifier: {
+            color: "#ffffff",
+          },
+          userPreviewSecondaryIdentifier: {
+            color: "#9ca3af",
+          },
         },
       }}
     >
