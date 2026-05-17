@@ -23,6 +23,17 @@ export default function RootLayout({
           colorText: "#e5e7eb",
           colorTextSecondary: "#9ca3af",
         },
+        elements: {
+          socialButtonsBlockButton: {
+            backgroundColor: "#ffffff",
+            color: "#1f1f1f",
+            borderColor: "#dadce0",
+          },
+          socialButtonsBlockButtonText: {
+            color: "#1f1f1f",
+            fontWeight: "500",
+          },
+        },
       }}
     >
       <html lang="en">
