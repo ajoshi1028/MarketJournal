@@ -42,6 +42,10 @@ export default function CoachingPage() {
     try {
       const res = await fetch("/api/ai/coaching", { method: "POST" });
       const data = await res.json();
+      if (!res.ok) {
+        setCoaching(data.error || "Failed to generate coaching.");
+        return;
+      }
       if (data.coaching) {
         setCoaching(data.coaching);
         if (data.date) setSelectedDate(data.date.slice(0, 10));
