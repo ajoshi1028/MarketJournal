@@ -189,7 +189,7 @@ export default function HomePage() {
                 $0<span className="text-lg text-gray-500 font-normal">/mo</span>
               </p>
               <ul className="space-y-3 mb-8">
-                {["Up to 10 trades/month", "Basic analytics", "Risk calculator", "Daily journal"].map((item) => (
+                {["10 AI chart analyses", "10 AI coaching reports", "Basic analytics", "Risk calculator", "Daily journal"].map((item) => (
                   <li key={item} className="flex items-center gap-2 text-sm text-gray-300">
                     <svg className="w-4 h-4 text-profit flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -215,11 +215,12 @@ export default function HomePage() {
               <ul className="space-y-3 mb-8">
                 {[
                   "Unlimited trades",
-                  "AI chart analysis",
-                  "AI trading coach",
+                  "Unlimited AI chart analysis",
+                  "Unlimited AI coaching",
                   "Advanced analytics",
                   "PDF reports",
                   "Trade replay",
+                  "CSV broker import",
                   "Priority support",
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-2 text-sm text-gray-300">
