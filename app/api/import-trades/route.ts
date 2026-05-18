@@ -466,10 +466,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error("Import trades failed:", err);
     return NextResponse.json(
-      {
-        error: "Import failed",
-        details: err?.message ?? "Unknown error",
-      },
+      { error: "Import failed. Please check your file format and try again." },
       { status: 500 }
     );
   }

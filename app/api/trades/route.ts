@@ -3,6 +3,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { putPublicObject } from "@/lib/s3";
 import { analyzeTradeChart } from "@/lib/ai";
+import { rateLimit } from "@/lib/rate-limit";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
@@ -104,6 +105,10 @@ export async function POST(req: NextRequest) {
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { success } = rateLimit(`trades:${userId}`, 60, 60 * 60 * 1000);
+  if (!success)
+    return NextResponse.json({ error: "Rate limit exceeded. Try again later." }, { status: 429 });
+
   await ensureUser(userId);
 
   const isMultipart = (req.headers.get("content-type") || "").includes(
@@ -127,8 +132,8 @@ export async function POST(req: NextRequest) {
       entryTime: get("entryTime") || null,
       sellDate: get("sellDate") || null,
       exitTime: get("exitTime") || null,
-      buyFills: JSON.parse(get("buyFills") || "[]"),
-      sellFills: JSON.parse(get("sellFills") || "[]"),
+      buyFills: (() => { try { return JSON.parse(get("buyFills") || "[]"); } catch { return []; } })(),
+      sellFills: (() => { try { return JSON.parse(get("sellFills") || "[]"); } catch { return []; } })(),
       notes: get("notes") || null,
     };
     const f = fd.get("chartImage");
