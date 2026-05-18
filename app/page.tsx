@@ -3,149 +3,296 @@ import { SignedIn, SignedOut } from "@clerk/nextjs";
 
 export const dynamic = "force-dynamic";
 
+const features = [
+  {
+    title: "AI Trade Analysis",
+    desc: "Upload your chart and get instant AI-powered analysis of your entries, exits, and what you could improve.",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+      </svg>
+    ),
+  },
+  {
+    title: "Smart Trade Journal",
+    desc: "Log every trade with option type, strike, entry/exit times, and chart snapshots. All in one place.",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+      </svg>
+    ),
+  },
+  {
+    title: "Performance Analytics",
+    desc: "Win rate, P&L by strategy, best tickers, weekday patterns — see exactly where you make and lose money.",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+      </svg>
+    ),
+  },
+  {
+    title: "AI Trading Coach",
+    desc: "Get personalized weekly coaching based on your patterns. Strengths, weaknesses, and action items.",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 00-.491 6.347A48.62 48.62 0 0112 20.904a48.62 48.62 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.636 50.636 0 00-2.658-.813A59.906 59.906 0 0112 3.493a59.903 59.903 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0112 13.489a50.702 50.702 0 017.74-3.342" />
+      </svg>
+    ),
+  },
+  {
+    title: "Trade Replay",
+    desc: "Replay past trades with your chart snapshots side-by-side with live TradingView charts.",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
+      </svg>
+    ),
+  },
+  {
+    title: "Risk Calculator",
+    desc: "Calculate position sizes, max loss, and reward-to-risk ratios before entering any trade.",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0012 2.25z" />
+      </svg>
+    ),
+  },
+];
+
+const steps = [
+  { num: "1", title: "Log Your Trade", desc: "Enter your ticker, option contract, fills, and upload a chart screenshot." },
+  { num: "2", title: "Get AI Analysis", desc: "Our AI analyzes your chart, entry timing, and trade structure instantly." },
+  { num: "3", title: "Track & Improve", desc: "Review analytics, spot patterns, and get personalized coaching to level up." },
+];
+
 export default function HomePage() {
   return (
-    <main className="max-w-6xl mx-auto px-6 py-12">
+    <main>
       <SignedOut>
-        <div className="text-center mb-20 pt-8">
-          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight">
-            Trade Smarter.{" "}
-            <span className="text-accent-light">Track Everything.</span>
-          </h1>
-          <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Your comprehensive trading journal and portfolio tracker. Record
-            trades, analyze performance, and manage risk with powerful tools.
-          </p>
-          <div className="flex items-center justify-center gap-4">
-            <Link href="/sign-up" className="btn-primary text-lg px-8 py-3">
+        {/* Hero */}
+        <section className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent" />
+          <div className="max-w-6xl mx-auto px-6 pt-16 pb-20 relative">
+            <div className="text-center max-w-3xl mx-auto">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent-light text-sm font-medium mb-8">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+                AI-Powered Trading Journal
+              </div>
+              <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 leading-[1.1]">
+                Trade Smarter.{" "}
+                <span className="bg-gradient-to-r from-accent-light to-purple-400 bg-clip-text text-transparent">
+                  Win More.
+                </span>
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-400 mb-10 leading-relaxed max-w-2xl mx-auto">
+                The options trading journal that analyzes your charts, coaches your strategy, and helps you find your edge.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link href="/sign-up" className="btn-primary text-lg px-10 py-3.5 shadow-glow">
+                  Start Free
+                </Link>
+                <Link
+                  href="/sign-in"
+                  className="border border-surface-400 text-gray-300 hover:bg-surface-200 px-10 py-3.5 rounded-lg text-lg font-medium transition-colors"
+                >
+                  Sign In
+                </Link>
+              </div>
+              <p className="text-gray-600 text-sm mt-4">Free to use. No credit card required.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Stats bar */}
+        <section className="border-y border-surface-300 bg-surface-50">
+          <div className="max-w-6xl mx-auto px-6 py-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              {[
+                { val: "AI", label: "Chart Analysis" },
+                { val: "10+", label: "Analytics Metrics" },
+                { val: "PDF", label: "Trade Reports" },
+                { val: "Free", label: "To Get Started" },
+              ].map((s) => (
+                <div key={s.label}>
+                  <p className="text-2xl md:text-3xl font-bold text-white">{s.val}</p>
+                  <p className="text-gray-500 text-sm mt-1">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section className="max-w-6xl mx-auto px-6 py-20">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Everything You Need to Trade Better
+            </h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              Built by traders, for traders. Every feature designed to help you find and keep your edge.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((f) => (
+              <div
+                key={f.title}
+                className="card p-6 hover:border-surface-400 hover:shadow-glow transition-all duration-300 group"
+              >
+                <div className="w-11 h-11 rounded-lg bg-accent/10 flex items-center justify-center mb-4 text-accent-light group-hover:bg-accent/20 transition-colors">
+                  {f.icon}
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">{f.title}</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* How it works */}
+        <section className="bg-surface-50 border-y border-surface-300">
+          <div className="max-w-6xl mx-auto px-6 py-20">
+            <div className="text-center mb-14">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                How It Works
+              </h2>
+              <p className="text-gray-400 text-lg">Three steps to becoming a better trader.</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8">
+              {steps.map((s) => (
+                <div key={s.num} className="text-center">
+                  <div className="w-14 h-14 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center mx-auto mb-5">
+                    <span className="text-xl font-bold text-accent-light">{s.num}</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">{s.title}</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing */}
+        <section className="max-w-6xl mx-auto px-6 py-20">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Simple Pricing</h2>
+            <p className="text-gray-400 text-lg">Start free, upgrade when you need more.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {/* Free */}
+            <div className="card p-8">
+              <h3 className="text-lg font-semibold text-white mb-1">Free</h3>
+              <p className="text-gray-500 text-sm mb-5">Perfect for getting started</p>
+              <p className="text-4xl font-bold text-white mb-6">
+                $0<span className="text-lg text-gray-500 font-normal">/mo</span>
+              </p>
+              <ul className="space-y-3 mb-8">
+                {["Up to 10 trades/month", "Basic analytics", "Risk calculator", "Daily journal"].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-sm text-gray-300">
+                    <svg className="w-4 h-4 text-profit flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/sign-up" className="block text-center border border-surface-400 text-gray-300 hover:bg-surface-200 px-6 py-2.5 rounded-lg font-medium transition-colors">
+                Get Started
+              </Link>
+            </div>
+            {/* Pro */}
+            <div className="card p-8 border-accent/30 relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-accent text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                POPULAR
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-1">Pro</h3>
+              <p className="text-gray-500 text-sm mb-5">For serious traders</p>
+              <p className="text-4xl font-bold text-white mb-6">
+                $19<span className="text-lg text-gray-500 font-normal">/mo</span>
+              </p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  "Unlimited trades",
+                  "AI chart analysis",
+                  "AI trading coach",
+                  "Advanced analytics",
+                  "PDF reports",
+                  "Trade replay",
+                  "Priority support",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-sm text-gray-300">
+                    <svg className="w-4 h-4 text-accent-light flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/sign-up" className="btn-primary block text-center py-2.5">
+                Start Free Trial
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="border-t border-surface-300 bg-gradient-to-b from-surface-50 to-surface">
+          <div className="max-w-6xl mx-auto px-6 py-20 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Ready to Find Your Edge?
+            </h2>
+            <p className="text-gray-400 text-lg mb-8 max-w-xl mx-auto">
+              Join traders who use MarketJournal to track, analyze, and improve their trading performance.
+            </p>
+            <Link href="/sign-up" className="btn-primary text-lg px-10 py-3.5 shadow-glow">
               Get Started Free
             </Link>
-            <Link
-              href="/sign-in"
-              className="border border-surface-400 text-gray-300 hover:bg-surface-200 px-8 py-3 rounded-lg text-lg font-medium transition-colors"
-            >
-              Sign In
-            </Link>
           </div>
-        </div>
+        </section>
 
-        <div className="grid md:grid-cols-3 gap-6 mb-20">
-          {[
-            {
-              icon: (
-                <svg className="w-7 h-7 text-accent-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-                </svg>
-              ),
-              title: "Trading Journal",
-              desc: "Record and analyze your trading activity with detailed performance metrics.",
-            },
-            {
-              icon: (
-                <svg className="w-7 h-7 text-profit" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
-                </svg>
-              ),
-              title: "Portfolio Tracking",
-              desc: "Track your account growth with real-time P&L charts and analytics.",
-            },
-            {
-              icon: (
-                <svg className="w-7 h-7 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0012 2.25z" />
-                </svg>
-              ),
-              title: "Risk Calculator",
-              desc: "Calculate optimal position sizes and manage risk effectively.",
-            },
-          ].map((f) => (
-            <div
-              key={f.title}
-              className="card p-6 hover:border-surface-400 transition-colors"
-            >
-              <div className="w-12 h-12 rounded-lg bg-surface-200 flex items-center justify-center mb-4">
-                {f.icon}
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
-                {f.title}
-              </h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{f.desc}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="text-center card p-10 border-accent/20">
-          <h2 className="text-2xl font-bold text-white mb-3">
-            Ready to Start Trading Smarter?
-          </h2>
-          <p className="text-gray-400 mb-6">
-            Join traders who use Market Journal to improve their performance.
-          </p>
-          <Link href="/sign-up" className="btn-primary text-lg px-8 py-3">
-            Create Your Free Account
-          </Link>
-        </div>
+        {/* Footer */}
+        <footer className="border-t border-surface-300 py-8">
+          <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-gray-600 text-sm">MarketJournal</p>
+            <p className="text-gray-600 text-sm">Built for options traders.</p>
+          </div>
+        </footer>
       </SignedOut>
 
       <SignedIn>
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
-          <p className="text-gray-400">
-            Track your trades and manage your portfolio.
-          </p>
-        </div>
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="mb-10">
+            <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
+            <p className="text-gray-400">Track your trades and manage your portfolio.</p>
+          </div>
 
-        <div className="grid md:grid-cols-3 gap-5">
-          <Link
-            href="/trades"
-            className="card p-6 group hover:border-accent/40 hover:shadow-glow transition-all duration-200"
-          >
-            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
-              <svg className="w-5 h-5 text-accent-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-              </svg>
-            </div>
-            <h2 className="text-lg font-semibold text-white mb-1">
-              Trading Journal
-            </h2>
-            <p className="text-gray-500 text-sm">
-              Record and analyze your trading activity
-            </p>
-          </Link>
-
-          <Link
-            href="/account"
-            className="card p-6 group hover:border-profit/40 transition-all duration-200"
-          >
-            <div className="w-10 h-10 rounded-lg bg-profit/10 flex items-center justify-center mb-4 group-hover:bg-profit/20 transition-colors">
-              <svg className="w-5 h-5 text-profit" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
-              </svg>
-            </div>
-            <h2 className="text-lg font-semibold text-white mb-1">
-              My Account
-            </h2>
-            <p className="text-gray-500 text-sm">
-              Portfolio analytics and growth tracking
-            </p>
-          </Link>
-
-          <Link
-            href="/calculator"
-            className="card p-6 group hover:border-amber-500/40 transition-all duration-200"
-          >
-            <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center mb-4 group-hover:bg-amber-500/20 transition-colors">
-              <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0012 2.25z" />
-              </svg>
-            </div>
-            <h2 className="text-lg font-semibold text-white mb-1">
-              Risk Calculator
-            </h2>
-            <p className="text-gray-500 text-sm">
-              Calculate optimal position sizes
-            </p>
-          </Link>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { href: "/trades", title: "Trading Journal", desc: "Record and analyze your trades", color: "accent", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg> },
+              { href: "/track", title: "Track & Filter", desc: "Filter and sort your trade history", color: "accent", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg> },
+              { href: "/analytics", title: "Analytics", desc: "Deep dive into your performance", color: "profit", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg> },
+              { href: "/journal", title: "Daily Journal", desc: "Pre-market plans and post-market review", color: "amber-500", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg> },
+              { href: "/coaching", title: "AI Coach", desc: "Get personalized trading advice", color: "accent", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg> },
+              { href: "/replay", title: "Trade Replay", desc: "Review trades with live charts", color: "accent", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" /></svg> },
+              { href: "/reports", title: "PDF Reports", desc: "Generate downloadable trade reports", color: "accent", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg> },
+              { href: "/calculator", title: "Risk Calculator", desc: "Calculate position sizes", color: "amber-500", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0012 2.25z" /></svg> },
+              { href: "/billing", title: "Billing", desc: "Manage your subscription", color: "accent", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg> },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="card p-5 group hover:border-surface-400 hover:shadow-glow transition-all duration-200"
+              >
+                <div className={`w-10 h-10 rounded-lg bg-${item.color}/10 flex items-center justify-center mb-3 group-hover:bg-${item.color}/20 transition-colors text-${item.color === "profit" ? "profit" : item.color === "amber-500" ? "amber-400" : "accent-light"}`}>
+                  {item.icon}
+                </div>
+                <h2 className="text-base font-semibold text-white mb-0.5">{item.title}</h2>
+                <p className="text-gray-500 text-sm">{item.desc}</p>
+              </Link>
+            ))}
+          </div>
         </div>
       </SignedIn>
     </main>

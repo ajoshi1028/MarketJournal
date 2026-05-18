@@ -21,11 +21,17 @@ async function ensureUser(userId: string) {
     [cu?.firstName, cu?.lastName].filter(Boolean).join(" ")) ||
     null;
 
-  await prisma.user.upsert({
-    where: { id: userId },
-    update: {},
-    create: { id: userId, email, name },
-  });
+  const existingByEmail = await prisma.user.findUnique({ where: { email } });
+  if (existingByEmail) {
+    await prisma.user.update({
+      where: { email },
+      data: { id: userId, name: name ?? existingByEmail.name },
+    });
+  } else {
+    await prisma.user.create({
+      data: { id: userId, email, name },
+    });
+  }
 }
 
 export async function GET() {

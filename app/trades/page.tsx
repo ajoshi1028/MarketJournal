@@ -12,8 +12,13 @@ type Trade = {
   ticker: string;
   strategy: string | null;
   positionType: "LONG" | "SHORT";
+  optionType?: string | null;
+  strike?: number | null;
+  expiry?: string | null;
   entryDate: string;
+  entryTime?: string | null;
   sellDate?: string | null;
+  exitTime?: string | null;
   buyFills?: { qty: number; price: number }[] | null;
   sellFills?: { qty: number; price: number }[] | null;
   totalBuyQty?: number;
@@ -29,9 +34,13 @@ type Trade = {
 type FormState = {
   ticker: string;
   strategy: string;
-  positionType: "" | "LONG" | "SHORT";
+  positionType: "" | "CALL" | "PUT";
+  strike: string;
+  expiry: string;
   entryDate: string;
+  entryTime: string;
   sellDate: string;
+  exitTime: string;
   buyFills: Fill[];
   sellFills: Fill[];
   notes: string;
@@ -41,8 +50,12 @@ const EMPTY_FORM: FormState = {
   ticker: "",
   strategy: "",
   positionType: "",
+  strike: "",
+  expiry: "",
   entryDate: "",
+  entryTime: "",
   sellDate: "",
+  exitTime: "",
   buyFills: [{ qty: "", price: "" }],
   sellFills: [{ qty: "", price: "" }],
   notes: "",
@@ -146,10 +159,15 @@ export default function TradesPage() {
       const fd = new FormData();
       fd.append("ticker", form.ticker.trim().toUpperCase());
       fd.append("strategy", form.strategy.trim());
-      fd.append("positionType", form.positionType);
+      fd.append("positionType", form.positionType === "CALL" ? "LONG" : "SHORT");
+      fd.append("optionType", form.positionType);
+      if (form.strike) fd.append("strike", form.strike);
+      if (form.expiry) fd.append("expiry", form.expiry + "T12:00:00.000Z");
       fd.append("entryDate", form.entryDate + "T12:00:00.000Z");
+      if (form.entryTime) fd.append("entryTime", form.entryTime);
       if (form.sellDate)
         fd.append("sellDate", form.sellDate + "T12:00:00.000Z");
+      if (form.exitTime) fd.append("exitTime", form.exitTime);
       fd.append("buyFills", JSON.stringify(toArray(form.buyFills)));
       fd.append("sellFills", JSON.stringify(toArray(form.sellFills)));
       fd.append("notes", form.notes.trim());
@@ -241,7 +259,7 @@ export default function TradesPage() {
                 />
               </div>
               <div>
-                <label className="label">Position Type *</label>
+                <label className="label">Position *</label>
                 <select
                   value={form.positionType}
                   onChange={(e) => setField("positionType", e.target.value)}
@@ -249,8 +267,8 @@ export default function TradesPage() {
                   required
                 >
                   <option value="">Select</option>
-                  <option value="LONG">Long</option>
-                  <option value="SHORT">Short</option>
+                  <option value="CALL">Call</option>
+                  <option value="PUT">Put</option>
                 </select>
               </div>
               <div>
@@ -263,12 +281,51 @@ export default function TradesPage() {
                   required
                 />
               </div>
-              <div className="md:col-span-2">
+              <div>
+                <label className="label">Strike Price</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  min={0}
+                  value={form.strike}
+                  onChange={(e) => setField("strike", e.target.value)}
+                  className="input-field"
+                  placeholder="e.g., 701"
+                />
+              </div>
+              <div>
+                <label className="label">Expiry</label>
+                <input
+                  type="date"
+                  value={form.expiry}
+                  onChange={(e) => setField("expiry", e.target.value)}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="label">Entry Time</label>
+                <input
+                  type="time"
+                  value={form.entryTime}
+                  onChange={(e) => setField("entryTime", e.target.value)}
+                  className="input-field"
+                />
+              </div>
+              <div>
                 <label className="label">Sell Date</label>
                 <input
                   type="date"
                   value={form.sellDate}
                   onChange={(e) => setField("sellDate", e.target.value)}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="label">Exit Time</label>
+                <input
+                  type="time"
+                  value={form.exitTime}
+                  onChange={(e) => setField("exitTime", e.target.value)}
                   className="input-field"
                 />
               </div>
@@ -443,26 +500,33 @@ function TradeCard({
         ? "bg-loss-muted"
         : "bg-surface-100";
 
+  const displayType = t.optionType || t.positionType;
   const posBadge =
-    t.positionType === "LONG"
+    displayType === "CALL" || t.positionType === "LONG"
       ? "bg-profit/15 text-profit"
       : "bg-loss/15 text-loss";
 
   return (
     <div className={`p-4 rounded-xl border ${borderColor} ${bgTint}`}>
       <div className="flex justify-between items-start mb-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h3 className="font-semibold text-white text-lg">{t.ticker}</h3>
+          {t.strike && (
+            <span className="text-sm text-accent-light font-medium">
+              {t.strike} {displayType}
+              {t.expiry ? ` (${fmtDate(t.expiry)})` : ""}
+            </span>
+          )}
           {t.strategy && (
             <span className="text-sm text-gray-500">{t.strategy}</span>
           )}
         </div>
-        <span className={`badge ${posBadge}`}>{t.positionType}</span>
+        <span className={`badge ${posBadge}`}>{displayType}</span>
       </div>
 
       <p className="text-gray-400 text-sm mb-2">
-        {fmtDate(t.entryDate)}
-        {t.sellDate ? ` → ${fmtDate(t.sellDate)}` : ""}
+        {fmtDate(t.entryDate)}{t.entryTime ? ` ${t.entryTime}` : ""}
+        {t.sellDate ? ` → ${fmtDate(t.sellDate)}${t.exitTime ? ` ${t.exitTime}` : ""}` : ""}
       </p>
 
       <div className="grid grid-cols-2 gap-x-6 text-sm">
