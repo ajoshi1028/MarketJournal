@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
-import { isProUser } from "@/lib/subscription";
+import { checkFeatureAccess, incrementUsage } from "@/lib/subscription";
 import OpenAI from "openai";
 
 export const runtime = "nodejs";
@@ -48,8 +48,12 @@ export async function POST() {
   if (!process.env.OPENAI_API_KEY)
     return NextResponse.json({ error: "AI not configured" }, { status: 500 });
 
-  if (!(await isProUser(userId)))
-    return NextResponse.json({ error: "Pro subscription required" }, { status: 403 });
+  const access = await checkFeatureAccess(userId, "aiCoaching");
+  if (!access.allowed)
+    return NextResponse.json({
+      error: "You've used all 10 free coaching reports. Upgrade to Pro for unlimited access.",
+      upgradeRequired: true,
+    }, { status: 403 });
 
   const { success } = rateLimit(`coaching:${userId}`, 5, 60 * 60 * 1000);
   if (!success)
@@ -209,5 +213,11 @@ Be direct, specific, and reference actual numbers. No generic advice. ~400 words
     create: { userId, date: dateOnly, content: coaching },
   });
 
-  return NextResponse.json({ coaching, date: dateOnly.toISOString() });
+  if (!access.isPro) await incrementUsage(userId, "aiCoaching");
+
+  return NextResponse.json({
+    coaching,
+    date: dateOnly.toISOString(),
+    remaining: access.isPro ? -1 : access.remaining - 1,
+  });
 }

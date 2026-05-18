@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { putPublicObject } from "@/lib/s3";
 import { analyzeTradeChart } from "@/lib/ai";
 import { rateLimit } from "@/lib/rate-limit";
-import { isProUser } from "@/lib/subscription";
+import { checkFeatureAccess, incrementUsage } from "@/lib/subscription";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
@@ -78,8 +78,12 @@ export async function POST(
   if (!process.env.OPENAI_API_KEY)
     return NextResponse.json({ error: "AI service not configured" }, { status: 500 });
 
-  if (!(await isProUser(userId)))
-    return NextResponse.json({ error: "Pro subscription required" }, { status: 403 });
+  const access = await checkFeatureAccess(userId, "aiAnalysis");
+  if (!access.allowed)
+    return NextResponse.json({
+      error: "You've used all 10 free re-analyses. Upgrade to Pro for unlimited access.",
+      upgradeRequired: true,
+    }, { status: 403 });
 
   const { success } = rateLimit(`analyze:${userId}`, 20, 60 * 60 * 1000);
   if (!success)
@@ -90,6 +94,8 @@ export async function POST(
     where: { id: trade.id },
     data: { aiAnalysis: aiText },
   });
+
+  if (!access.isPro) await incrementUsage(userId, "aiAnalysis");
 
   return NextResponse.json({ aiAnalysis: aiText });
 }

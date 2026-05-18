@@ -87,9 +87,16 @@ export default function TradesPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [usage, setUsage] = useState<{ isPro: boolean; chart: { used: number; limit: number } } | null>(null);
 
   useEffect(() => {
-    if (isLoaded && user) fetchTrades();
+    if (isLoaded && user) {
+      fetchTrades();
+      fetch("/api/usage", { cache: "no-store" })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => d && setUsage(d))
+        .catch(() => {});
+    }
   }, [isLoaded, user]);
 
   async function fetchTrades() {
@@ -376,6 +383,15 @@ export default function TradesPage() {
               {chartFile && (
                 <p className="text-xs text-gray-500 mt-1">
                   {chartFile.name} ({Math.round(chartFile.size / 1024)} KB)
+                </p>
+              )}
+              {usage && !usage.isPro && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {usage.chart.used >= usage.chart.limit ? (
+                    <>AI chart analysis limit reached. <a href="/account" className="text-accent-light hover:text-accent">Upgrade to Pro for unlimited</a></>
+                  ) : (
+                    <>{usage.chart.limit - usage.chart.used} free AI chart analyses remaining. <a href="/account" className="text-accent-light hover:text-accent">Upgrade to Pro for unlimited</a></>
+                  )}
                 </p>
               )}
             </div>

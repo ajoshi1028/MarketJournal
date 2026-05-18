@@ -23,6 +23,10 @@ model User {
   subscriptionStatus   String?   @default("free")
   subscriptionPlan     String?   @default("free")
   subscriptionEndDate  DateTime?
+
+  aiCoachingUsed       Int       @default(0)
+  aiAnalysisUsed       Int       @default(0)
+  aiChartUsed          Int       @default(0)
 }
 
 model Account {

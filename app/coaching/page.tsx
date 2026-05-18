@@ -15,6 +15,11 @@ function getMonthDays(year: number, month: number) {
   };
 }
 
+type UsageInfo = {
+  isPro: boolean;
+  coaching: { used: number; limit: number };
+} | null;
+
 export default function CoachingPage() {
   const [coaching, setCoaching] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,6 +27,7 @@ export default function CoachingPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
   const [calYear, setCalYear] = useState(new Date().getFullYear());
+  const [usage, setUsage] = useState<UsageInfo>(null);
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -33,7 +39,14 @@ export default function CoachingPage() {
     } catch {}
   }, []);
 
-  useEffect(() => { fetchHistory(); }, [fetchHistory]);
+  const fetchUsage = useCallback(async () => {
+    try {
+      const res = await fetch("/api/usage", { cache: "no-store" });
+      if (res.ok) setUsage(await res.json());
+    } catch {}
+  }, []);
+
+  useEffect(() => { fetchHistory(); fetchUsage(); }, [fetchHistory, fetchUsage]);
 
   async function handleGenerate() {
     setLoading(true);
@@ -43,13 +56,18 @@ export default function CoachingPage() {
       const res = await fetch("/api/ai/coaching", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
-        setCoaching(data.error || "Failed to generate coaching.");
+        if (data.upgradeRequired) {
+          setCoaching("UPGRADE_REQUIRED");
+        } else {
+          setCoaching(data.error || "Failed to generate coaching.");
+        }
         return;
       }
       if (data.coaching) {
         setCoaching(data.coaching);
         if (data.date) setSelectedDate(data.date.slice(0, 10));
         fetchHistory();
+        fetchUsage();
       }
     } catch {
       setCoaching("Failed to generate coaching.");
@@ -158,9 +176,28 @@ export default function CoachingPage() {
             </div>
           </div>
 
-          <button onClick={handleGenerate} disabled={loading} className="btn-primary w-full disabled:opacity-50">
+          <button
+            onClick={handleGenerate}
+            disabled={loading || (usage !== null && !usage.isPro && usage.coaching.used >= usage.coaching.limit)}
+            className="btn-primary w-full disabled:opacity-50"
+          >
             {loading ? "Analyzing..." : "Generate Today's Coaching"}
           </button>
+
+          {usage && !usage.isPro && (
+            <div className="card p-3 text-center space-y-1.5">
+              <p className="text-xs text-gray-400">
+                {usage.coaching.used >= usage.coaching.limit ? (
+                  <span className="text-loss">No free coaching reports remaining</span>
+                ) : (
+                  <>{usage.coaching.limit - usage.coaching.used} of {usage.coaching.limit} free reports remaining</>
+                )}
+              </p>
+              <a href="/account" className="text-xs text-accent-light hover:text-accent font-medium transition-colors">
+                Upgrade to Pro for unlimited &rarr;
+              </a>
+            </div>
+          )}
 
           {reportDates.size > 0 && (
             <p className="text-xs text-gray-600 text-center">
@@ -175,6 +212,17 @@ export default function CoachingPage() {
             <div className="card p-12 text-center">
               <div className="inline-block w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mb-3" />
               <p className="text-gray-400 text-sm">Analyzing your trading patterns...</p>
+            </div>
+          ) : coaching === "UPGRADE_REQUIRED" ? (
+            <div className="card p-12 text-center">
+              <div className="text-4xl mb-4">&#x1f512;</div>
+              <h2 className="text-lg font-semibold text-white mb-2">Free Coaching Limit Reached</h2>
+              <p className="text-sm text-gray-400 mb-4">
+                You&apos;ve used all 10 free coaching reports. Upgrade to Pro for unlimited AI coaching, chart analysis, and more.
+              </p>
+              <a href="/account" className="btn-primary inline-block">
+                Upgrade to Pro
+              </a>
             </div>
           ) : coaching ? (
             <div className="card p-6">

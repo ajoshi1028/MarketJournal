@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { putPublicObject } from "@/lib/s3";
 import { analyzeTradeChart } from "@/lib/ai";
 import { rateLimit } from "@/lib/rate-limit";
+import { checkFeatureAccess, incrementUsage } from "@/lib/subscription";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
@@ -238,16 +239,20 @@ export async function POST(req: NextRequest) {
     });
 
     if (process.env.OPENAI_API_KEY) {
-      try {
-        const aiText = await analyzeTradeChart(url, trade);
-        if (aiText) {
-          trade = await prisma.tradeEntry.update({
-            where: { id: trade.id },
-            data: { aiAnalysis: aiText },
-          });
+      const chartAccess = await checkFeatureAccess(userId, "aiChart");
+      if (chartAccess.allowed) {
+        try {
+          const aiText = await analyzeTradeChart(url, trade);
+          if (aiText) {
+            trade = await prisma.tradeEntry.update({
+              where: { id: trade.id },
+              data: { aiAnalysis: aiText },
+            });
+            if (!chartAccess.isPro) await incrementUsage(userId, "aiChart");
+          }
+        } catch (e) {
+          console.warn("AI analysis on create failed:", e);
         }
-      } catch (e) {
-        console.warn("AI analysis on create failed:", e);
       }
     }
   }
