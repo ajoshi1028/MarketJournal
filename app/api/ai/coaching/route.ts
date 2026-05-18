@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
+import { isProUser } from "@/lib/subscription";
 import OpenAI from "openai";
 
 export const runtime = "nodejs";
@@ -45,6 +47,13 @@ export async function POST() {
 
   if (!process.env.OPENAI_API_KEY)
     return NextResponse.json({ error: "AI not configured" }, { status: 500 });
+
+  if (!(await isProUser(userId)))
+    return NextResponse.json({ error: "Pro subscription required" }, { status: 403 });
+
+  const { success } = rateLimit(`coaching:${userId}`, 5, 60 * 60 * 1000);
+  if (!success)
+    return NextResponse.json({ error: "Rate limit exceeded. Try again later." }, { status: 429 });
 
   const trades = await prisma.tradeEntry.findMany({
     where: { userId },
