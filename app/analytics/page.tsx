@@ -57,6 +57,7 @@ const fmtUSD = (n: number) =>
 export default function AnalyticsPage() {
   const [data, setData] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -65,8 +66,9 @@ export default function AnalyticsPage() {
           cache: "no-store",
         });
         if (res.ok) setData(await res.json());
-      } catch (e) {
-        console.error(e);
+        else setError("Failed to load analytics.");
+      } catch {
+        setError("Network error loading analytics.");
       } finally {
         setLoading(false);
       }
@@ -77,6 +79,12 @@ export default function AnalyticsPage() {
     return (
       <main className="max-w-7xl mx-auto px-6 py-8 text-gray-400">
         Loading analytics...
+      </main>
+    );
+  if (error)
+    return (
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <div className="rounded-lg border border-red-500/30 bg-loss-muted px-4 py-3 text-red-400 text-sm">{error}</div>
       </main>
     );
   if (!data)

@@ -202,8 +202,7 @@ export default function ReportsPage() {
       }
 
       doc.save(`market-journal-report-${new Date().toISOString().slice(0, 10)}.pdf`);
-    } catch (e) {
-      console.error(e);
+    } catch {
       alert("Failed to generate report.");
     } finally {
       setLoading(false);

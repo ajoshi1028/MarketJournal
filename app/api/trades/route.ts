@@ -250,8 +250,8 @@ export async function POST(req: NextRequest) {
             });
             if (!chartAccess.isPro) await incrementUsage(userId, "aiChart");
           }
-        } catch (e) {
-          console.warn("AI analysis on create failed:", e);
+        } catch {
+          // AI analysis is non-critical; trade is already saved
         }
       }
     }

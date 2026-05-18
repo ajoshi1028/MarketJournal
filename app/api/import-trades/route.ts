@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
 import Papa from "papaparse";
 
 /* ---------- Canonical types ---------- */
@@ -286,6 +287,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { success } = rateLimit(`import:${userId}`, 5, 60 * 60 * 1000);
+    if (!success)
+      return NextResponse.json({ error: "Rate limit exceeded. Try again later." }, { status: 429 });
+
     const contentType = req.headers.get("content-type") || "";
     if (!contentType.includes("multipart/form-data")) {
       return NextResponse.json(
@@ -317,7 +322,6 @@ export async function POST(req: NextRequest) {
       (e) => e.code !== "TooManyFields" && e.code !== "TooFewFields"
     );
     if (fatalErrors.length) {
-      console.error("CSV parse errors:", parsed.errors);
       return NextResponse.json(
         {
           error: "Failed to parse CSV",
@@ -356,7 +360,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (!fills.length) {
-      console.error("Importer could not infer columns from headers:", headers);
       return NextResponse.json(
         {
           error:
@@ -464,7 +467,6 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
   } catch (err: any) {
-    console.error("Import trades failed:", err);
     return NextResponse.json(
       { error: "Import failed. Please check your file format and try again." },
       { status: 500 }

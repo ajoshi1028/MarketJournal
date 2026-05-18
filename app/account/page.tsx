@@ -132,8 +132,8 @@ export default function AccountPage() {
         );
         const j = (await res.json()) as Analytics;
         if (alive) setAnalyticsData(j);
-      } catch (e) {
-        console.error(e);
+      } catch {
+        // Analytics load failed — charts will show empty state
       } finally {
         if (alive) setLoadingAnalytics(false);
       }
