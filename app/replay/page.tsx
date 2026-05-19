@@ -252,6 +252,8 @@ export default function ReplayPage() {
   );
 }
 
+type ChartData = { candles: CandlestickData<Time>[] };
+
 function TradeChart({
   symbol,
   entryDate,
@@ -263,135 +265,151 @@ function TradeChart({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
+  const roRef = useRef<ResizeObserver | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [chartData, setChartData] = useState<ChartData | null>(null);
 
-  const fetchAndRender = useCallback(async () => {
-    if (!containerRef.current) return;
-    setLoading(true);
-    setError(null);
+  const entry = new Date(entryDate);
+  const exit = exitDate ? new Date(exitDate) : entry;
+  const entryStr = entry.toISOString().slice(0, 10);
+  const exitStr = exit.toISOString().slice(0, 10);
 
-    const entry = new Date(entryDate);
-    const exit = exitDate ? new Date(exitDate) : entry;
+  useEffect(() => {
+    let cancelled = false;
 
     const padBefore = new Date(entry);
-    padBefore.setDate(padBefore.getDate() - 15);
+    padBefore.setDate(padBefore.getDate() - 30);
     const padAfter = new Date(exit);
-    padAfter.setDate(padAfter.getDate() + 5);
+    padAfter.setDate(padAfter.getDate() + 10);
 
     const from = padBefore.toISOString().slice(0, 10);
     const to = padAfter.toISOString().slice(0, 10);
 
-    try {
-      const res = await fetch(
-        `/api/chart-data?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}`,
-      );
-      if (!res.ok) throw new Error("Failed to load chart data");
-      const data = await res.json();
+    setLoading(true);
+    setError(null);
+    setChartData(null);
 
-      if (!data.candles?.length) {
-        setError("No chart data available for this date range.");
+    fetch(`/api/chart-data?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed");
+        return res.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        if (!data.candles?.length) {
+          setError("No chart data available for this date range.");
+          setLoading(false);
+          return;
+        }
+        setChartData(data);
         setLoading(false);
-        return;
-      }
-
-      if (chartRef.current) {
-        chartRef.current.remove();
-        chartRef.current = null;
-      }
-
-      const chart = createChart(containerRef.current, {
-        width: containerRef.current.clientWidth,
-        height: 400,
-        layout: {
-          background: { type: ColorType.Solid, color: "#0e0e14" },
-          textColor: "#9ca3af",
-        },
-        grid: {
-          vertLines: { color: "rgba(42, 42, 56, 0.3)" },
-          horzLines: { color: "rgba(42, 42, 56, 0.3)" },
-        },
-        crosshair: {
-          vertLine: { color: "#6366f1", width: 1, style: 2 },
-          horzLine: { color: "#6366f1", width: 1, style: 2 },
-        },
-        timeScale: {
-          borderColor: "#2a2a38",
-          timeVisible: false,
-        },
-        rightPriceScale: {
-          borderColor: "#2a2a38",
-        },
-      });
-
-      const candleSeries = chart.addSeries(CandlestickSeries, {
-        upColor: "#22c55e",
-        downColor: "#ef4444",
-        borderDownColor: "#ef4444",
-        borderUpColor: "#22c55e",
-        wickDownColor: "#ef4444",
-        wickUpColor: "#22c55e",
-      });
-
-      candleSeries.setData(data.candles as CandlestickData<Time>[]);
-
-      const entryStr = entry.toISOString().slice(0, 10);
-      const exitStr = exit.toISOString().slice(0, 10);
-
-      createSeriesMarkers(candleSeries, [
-        {
-          time: entryStr as Time,
-          position: "belowBar",
-          color: "#6366f1",
-          shape: "arrowUp",
-          text: "Entry",
-        },
-        ...(exitDate
-          ? [
-              {
-                time: exitStr as Time,
-                position: "aboveBar" as const,
-                color: "#f59e0b",
-                shape: "arrowDown" as const,
-                text: "Exit",
-              },
-            ]
-          : []),
-      ]);
-
-      chart.timeScale().fitContent();
-      chartRef.current = chart;
-
-      const ro = new ResizeObserver(() => {
-        if (containerRef.current && chartRef.current) {
-          chartRef.current.applyOptions({
-            width: containerRef.current.clientWidth,
-          });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError("Could not load chart data.");
+          setLoading(false);
         }
       });
-      ro.observe(containerRef.current);
 
-      setLoading(false);
-
-      return () => ro.disconnect();
-    } catch {
-      setError("Could not load chart data.");
-      setLoading(false);
-    }
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol, entryDate, exitDate]);
 
   useEffect(() => {
-    fetchAndRender();
-    return () => {
-      if (chartRef.current) {
-        chartRef.current.remove();
-        chartRef.current = null;
+    if (!chartData || !containerRef.current) return;
+
+    if (chartRef.current) {
+      chartRef.current.remove();
+      chartRef.current = null;
+    }
+    if (roRef.current) {
+      roRef.current.disconnect();
+      roRef.current = null;
+    }
+
+    const container = containerRef.current;
+
+    const chart = createChart(container, {
+      width: container.clientWidth,
+      height: 400,
+      layout: {
+        background: { type: ColorType.Solid, color: "#0e0e14" },
+        textColor: "#9ca3af",
+      },
+      grid: {
+        vertLines: { color: "rgba(42, 42, 56, 0.3)" },
+        horzLines: { color: "rgba(42, 42, 56, 0.3)" },
+      },
+      crosshair: {
+        vertLine: { color: "#6366f1", width: 1, style: 2 },
+        horzLine: { color: "#6366f1", width: 1, style: 2 },
+      },
+      timeScale: {
+        borderColor: "#2a2a38",
+        timeVisible: false,
+        barSpacing: 12,
+      },
+      rightPriceScale: {
+        borderColor: "#2a2a38",
+      },
+    });
+
+    const candleSeries = chart.addSeries(CandlestickSeries, {
+      upColor: "#22c55e",
+      downColor: "#ef4444",
+      borderDownColor: "#ef4444",
+      borderUpColor: "#22c55e",
+      wickDownColor: "#ef4444",
+      wickUpColor: "#22c55e",
+    });
+
+    candleSeries.setData(chartData.candles);
+
+    createSeriesMarkers(candleSeries, [
+      {
+        time: entryStr as Time,
+        position: "belowBar",
+        color: "#6366f1",
+        shape: "arrowUp",
+        text: "Entry",
+      },
+      ...(exitDate
+        ? [
+            {
+              time: exitStr as Time,
+              position: "aboveBar" as const,
+              color: "#f59e0b",
+              shape: "arrowDown" as const,
+              text: "Exit",
+            },
+          ]
+        : []),
+    ]);
+
+    chart.timeScale().fitContent();
+    chartRef.current = chart;
+
+    const ro = new ResizeObserver(() => {
+      if (container && chartRef.current) {
+        chartRef.current.applyOptions({ width: container.clientWidth });
+        chartRef.current.timeScale().fitContent();
       }
+    });
+    ro.observe(container);
+    roRef.current = ro;
+
+    return () => {
+      ro.disconnect();
+      chart.remove();
+      chartRef.current = null;
+      roRef.current = null;
     };
-  }, [fetchAndRender]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartData]);
 
   return (
-    <div className="rounded-lg overflow-hidden border border-surface-300">
+    <div className="rounded-lg overflow-hidden border border-surface-300 relative">
       {loading && (
         <div className="h-[400px] flex items-center justify-center text-gray-500 text-sm">
           <div className="inline-block w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin mr-2" />
@@ -403,7 +421,10 @@ function TradeChart({
           {error}
         </div>
       )}
-      <div ref={containerRef} style={{ display: loading || error ? "none" : "block" }} />
+      <div
+        ref={containerRef}
+        className={loading || error ? "invisible h-0 overflow-hidden" : ""}
+      />
     </div>
   );
 }
