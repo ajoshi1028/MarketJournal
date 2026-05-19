@@ -25,6 +25,39 @@
   input[type="number"] {
     -moz-appearance: textfield;
   }
+
+  /* Dark theme for date/time picker icons and dropdowns */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+  input[type="date"]::-webkit-datetime-edit,
+  input[type="time"]::-webkit-datetime-edit {
+    color: #e5e7eb;
+  }
+  input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+  input[type="time"]::-webkit-datetime-edit-fields-wrapper {
+    color: #e5e7eb;
+  }
+  input[type="date"]::-webkit-datetime-edit-text {
+    color: #6b7280;
+  }
+
+  /* Style select dropdowns */
+  select {
+    color-scheme: dark;
+  }
+  input[type="date"],
+  input[type="time"] {
+    color-scheme: dark;
+  }
 }
 
 @layer components {

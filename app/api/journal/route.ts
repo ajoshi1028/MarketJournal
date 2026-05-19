@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(entry);
   }
 
-  const limit = Math.min(Number(searchParams.get("limit")) || 30, 100);
+  const limit = Math.min(Number(searchParams.get("limit")) || 30, 500);
   const entries = await prisma.journal.findMany({
     where: { userId },
     orderBy: { date: "desc" },

@@ -25,13 +25,23 @@ function toDateStr(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+function getMonthDays(year: number, month: number) {
+  return {
+    firstDay: new Date(year, month, 1).getDay(),
+    daysInMonth: new Date(year, month + 1, 0).getDate(),
+  };
+}
+
 export default function JournalPage() {
   const [selectedDate, setSelectedDate] = useState(toDateStr(new Date()));
   const [entry, setEntry] = useState<Partial<JournalEntry>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [watchlistInput, setWatchlistInput] = useState("");
-  const [recentEntries, setRecentEntries] = useState<JournalEntry[]>([]);
+  const [entryDates, setEntryDates] = useState<Set<string>>(new Set());
+
+  const [calMonth, setCalMonth] = useState(new Date().getMonth());
+  const [calYear, setCalYear] = useState(new Date().getFullYear());
 
   const fetchEntry = useCallback(async (date: string) => {
     try {
@@ -49,18 +59,20 @@ export default function JournalPage() {
     }
   }, []);
 
-  const fetchRecent = useCallback(async () => {
+  const fetchAllDates = useCallback(async () => {
     try {
-      const res = await fetch("/api/journal?limit=10", { cache: "no-store" });
+      const res = await fetch("/api/journal?limit=500", { cache: "no-store" });
       const data = await res.json();
-      if (Array.isArray(data)) setRecentEntries(data);
+      if (Array.isArray(data)) {
+        setEntryDates(new Set(data.map((e: { date: string }) => e.date.slice(0, 10))));
+      }
     } catch {}
   }, []);
 
   useEffect(() => {
     fetchEntry(selectedDate);
-    fetchRecent();
-  }, [selectedDate, fetchEntry, fetchRecent]);
+    fetchAllDates();
+  }, [selectedDate, fetchEntry, fetchAllDates]);
 
   async function handleSave() {
     setSaving(true);
@@ -77,7 +89,7 @@ export default function JournalPage() {
         body: JSON.stringify({ ...entry, date: selectedDate, watchlist }),
       });
       setSaved(true);
-      fetchRecent();
+      fetchAllDates();
       setTimeout(() => setSaved(false), 2000);
     } catch {
       alert("Failed to save.");
@@ -90,15 +102,16 @@ export default function JournalPage() {
     setEntry((prev) => ({ ...prev, [key]: value }));
   }
 
-  function prevDay() {
-    const d = new Date(selectedDate + "T12:00:00");
-    d.setDate(d.getDate() - 1);
-    setSelectedDate(toDateStr(d));
+  const { firstDay, daysInMonth } = getMonthDays(calYear, calMonth);
+  const monthName = new Date(calYear, calMonth).toLocaleString("en-US", { month: "long", year: "numeric" });
+
+  function prevMonth() {
+    if (calMonth === 0) { setCalMonth(11); setCalYear(calYear - 1); }
+    else setCalMonth(calMonth - 1);
   }
-  function nextDay() {
-    const d = new Date(selectedDate + "T12:00:00");
-    d.setDate(d.getDate() + 1);
-    setSelectedDate(toDateStr(d));
+  function nextMonth() {
+    if (calMonth === 11) { setCalMonth(0); setCalYear(calYear + 1); }
+    else setCalMonth(calMonth + 1);
   }
 
   const dateLabel = new Date(selectedDate + "T12:00:00").toLocaleDateString(
@@ -107,35 +120,68 @@ export default function JournalPage() {
   );
 
   return (
-    <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">Daily Journal</h1>
-          <p className="text-gray-500 text-sm">
-            Pre-market plan, post-market review, lessons learned.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={prevDay} className="btn-ghost text-sm">
-            &larr;
-          </button>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="input-field w-auto text-sm"
-          />
-          <button onClick={nextDay} className="btn-ghost text-sm">
-            &rarr;
-          </button>
-        </div>
+    <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">Daily Journal</h1>
+        <p className="text-gray-500 text-sm">
+          Pre-market plan, post-market review, lessons learned.
+        </p>
       </div>
 
-      <p className="text-gray-400 text-sm mb-6">{dateLabel}</p>
+      <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+        {/* Calendar sidebar */}
+        <div className="space-y-4">
+          <div className="card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <button onClick={prevMonth} className="btn-ghost text-xs px-2">&larr;</button>
+              <span className="text-sm font-semibold text-white">{monthName}</span>
+              <button onClick={nextMonth} className="btn-ghost text-xs px-2">&rarr;</button>
+            </div>
+            <div className="grid grid-cols-7 gap-0.5 mb-1">
+              {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => (
+                <div key={d} className="text-center text-xs text-gray-600 py-1">{d}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-0.5">
+              {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`} />)}
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const day = i + 1;
+                const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                const hasEntry = entryDates.has(dateStr);
+                const isSelected = selectedDate === dateStr;
+                const isToday = dateStr === toDateStr(new Date());
+                return (
+                  <button
+                    key={day}
+                    onClick={() => setSelectedDate(dateStr)}
+                    className={`aspect-square flex items-center justify-center text-xs rounded-lg transition-colors relative cursor-pointer ${
+                      isSelected ? "bg-accent text-white font-bold"
+                        : hasEntry ? "bg-accent/15 text-accent-light font-medium hover:bg-accent/25"
+                        : isToday ? "text-white bg-surface-300 hover:bg-surface-400"
+                        : "text-gray-600 hover:bg-surface-200"
+                    }`}
+                  >
+                    {day}
+                    {hasEntry && !isSelected && (
+                      <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent-light" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Main form */}
-        <div className="lg:col-span-2 space-y-5">
+          {entryDates.size > 0 && (
+            <p className="text-xs text-gray-600 text-center">
+              {entryDates.size} journal entr{entryDates.size === 1 ? "y" : "ies"} saved
+            </p>
+          )}
+        </div>
+
+        {/* Main content */}
+        <div className="space-y-5">
+          <p className="text-gray-400 text-sm">{dateLabel}</p>
+
           {/* Pre-market */}
           <div className="card p-5">
             <h2 className="text-base font-semibold text-white mb-3">
@@ -231,24 +277,13 @@ export default function JournalPage() {
             </div>
           </div>
 
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="btn-primary w-full disabled:opacity-50"
-          >
-            {saving ? "Saving..." : saved ? "Saved!" : "Save Journal Entry"}
-          </button>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-5">
-          {/* Self-assessment */}
+          {/* Self assessment */}
           <div className="card p-5">
-            <h3 className="text-sm font-semibold text-white mb-3">
+            <h3 className="text-base font-semibold text-white mb-3">
               Self Assessment
             </h3>
 
-            <div className="space-y-4">
+            <div className="grid sm:grid-cols-3 gap-4">
               <div>
                 <label className="label">Mood (1-5)</label>
                 <div className="flex gap-1">
@@ -312,51 +347,13 @@ export default function JournalPage() {
             </div>
           </div>
 
-          {/* Recent entries */}
-          <div className="card p-5">
-            <h3 className="text-sm font-semibold text-white mb-3">
-              Recent Entries
-            </h3>
-            <div className="space-y-1.5 max-h-80 overflow-y-auto">
-              {recentEntries.length === 0 ? (
-                <p className="text-xs text-gray-600">No entries yet.</p>
-              ) : (
-                recentEntries.map((e) => {
-                  const dateStr = e.date.slice(0, 10);
-                  const d = new Date(dateStr + "T12:00:00");
-                  const isSelected = dateStr === selectedDate;
-                  return (
-                    <button
-                      key={e.id}
-                      onClick={() => setSelectedDate(dateStr)}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                        isSelected
-                          ? "bg-accent/15 text-accent-light"
-                          : "text-gray-400 hover:bg-surface-200"
-                      }`}
-                    >
-                      <span className="font-medium">
-                        {d.toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </span>
-                      {e.grade && (
-                        <span className="ml-2 text-xs text-gray-500">
-                          Grade: {e.grade}
-                        </span>
-                      )}
-                      {e.marketBias && (
-                        <span className="ml-2 text-xs text-gray-600 capitalize">
-                          {e.marketBias}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </div>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="btn-primary w-full disabled:opacity-50"
+          >
+            {saving ? "Saving..." : saved ? "Saved!" : "Save Journal Entry"}
+          </button>
         </div>
       </div>
     </main>
