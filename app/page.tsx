@@ -101,7 +101,11 @@ export default function HomePage() {
                   Sign In
                 </Link>
               </div>
-              <p className="text-gray-600 text-sm mt-4">Free to use. No credit card required.</p>
+              <p className="text-gray-600 text-sm mt-4">
+                Free to use. No credit card required. By signing up, you agree to our{" "}
+                <Link href="/terms" className="underline hover:text-gray-400">Terms</Link> and{" "}
+                <Link href="/privacy" className="underline hover:text-gray-400">Privacy Policy</Link>.
+              </p>
             </div>
           </div>
         </section>
