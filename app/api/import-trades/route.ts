@@ -310,6 +310,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "CSV file too large (10 MB max)" },
+        { status: 400 }
+      );
+    }
+
     const csvText = await file.text();
 
     const parsed = Papa.parse(csvText, {
