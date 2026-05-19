@@ -257,7 +257,10 @@ export default function HomePage() {
         <footer className="border-t border-surface-300 py-8">
           <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-gray-600 text-sm">MarketJournal</p>
-            <p className="text-gray-600 text-sm">Built for options traders.</p>
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <Link href="/privacy" className="hover:text-gray-400 transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-gray-400 transition-colors">Terms of Service</Link>
+            </div>
           </div>
         </footer>
       </SignedOut>
