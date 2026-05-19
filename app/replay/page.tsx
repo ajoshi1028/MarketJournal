@@ -209,26 +209,17 @@ export default function ReplayPage() {
                 )}
               </div>
 
-              {/* Chart snapshot */}
-              {selected.chartUrl && (
-                <div className="card p-5">
-                  <h3 className="text-sm font-semibold text-gray-400 mb-3">
-                    Chart Snapshot (at time of trade)
-                  </h3>
-                  <img
-                    src={selected.chartUrl}
-                    alt={`${selected.ticker} chart`}
-                    className="w-full rounded-lg border border-surface-300"
-                  />
-                </div>
-              )}
-
               {/* Historical chart for trade date range */}
               <div className="card p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-400">
-                    Trade Chart
-                  </h3>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-400">
+                      Trade Chart
+                    </h3>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      Snapshots the chart, saves it to Track, and runs AI analysis.
+                    </p>
+                  </div>
                   <button
                     onClick={async () => {
                       if (!selected || !chartRef.current) return;
@@ -267,7 +258,7 @@ export default function ReplayPage() {
                     disabled={analyzing}
                     className="btn-primary text-xs px-3 py-1.5 disabled:opacity-50"
                   >
-                    {analyzing ? "Analyzing..." : "Snapshot & Analyze"}
+                    {analyzing ? "Analyzing..." : "Analyze"}
                   </button>
                 </div>
                 <TradeChart
