@@ -269,6 +269,7 @@ function TradeRow({
 }) {
   const [busy, setBusy] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   const borderColor =
     t.outcome === "PROFIT"
@@ -307,93 +308,109 @@ function TradeRow({
       const data = await res.json();
       setAiResult(t.id, data.aiAnalysis || "");
       setFile(null);
+      setExpanded(true);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className={`p-5 rounded-xl border ${borderColor} ${bgTint}`}>
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-white text-lg">{t.ticker}</h3>
-          {t.strategy && (
-            <span className="text-sm text-gray-500">{t.strategy}</span>
-          )}
-        </div>
-        <span className={`badge ${posBadge}`}>{t.positionType}</span>
-      </div>
-
-      <p className="text-gray-400 text-sm mb-2">
-        {fmtDate(t.entryDate)}
-        {t.sellDate ? ` → ${fmtDate(t.sellDate)}` : ""}
-      </p>
-
-      <div className="grid grid-cols-2 gap-x-6 text-sm">
-        <div className="space-y-0.5">
-          <p className="text-gray-500">
-            Bought: {t.totalBuyQty ?? 0} @ {fmtPrice(t.avgBuyPrice)}
-          </p>
-          <p className="text-gray-500">
-            Sold: {t.totalSellQty ?? 0} @ {fmtPrice(t.avgSellPrice)}
+    <div className={`rounded-xl border ${borderColor} ${bgTint}`}>
+      {/* Compact row — always visible */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full text-left px-5 py-4 flex items-center gap-4"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h3 className="font-semibold text-white">{t.ticker}</h3>
+            <span className="text-xs text-gray-500 truncate">
+              {t.strategy || `${fmtDate(t.entryDate)}${t.sellDate ? ` → ${fmtDate(t.sellDate)}` : ""}`}
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 truncate">
+            B: {t.totalBuyQty ?? 0} @ {fmtPrice(t.avgBuyPrice)} / S: {t.totalSellQty ?? 0} @ {fmtPrice(t.avgSellPrice)}
+            {t.strategy ? ` · ${fmtDate(t.entryDate)}${t.sellDate ? ` → ${fmtDate(t.sellDate)}` : ""}` : ""}
           </p>
         </div>
-        <div className="space-y-0.5">
-          <p className="font-medium text-gray-200">
-            P&L: {fmtUSD(t.realizedPnl ?? 0)}
-          </p>
-          {t.outcome && (
-            <p className={t.outcome === "PROFIT" ? "text-profit" : "text-loss"}>
-              {t.outcome === "PROFIT" ? "Profit" : "Loss"}
+
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="text-right">
+            <p
+              className={`font-mono font-medium text-sm ${
+                (t.realizedPnl ?? 0) >= 0 ? "text-profit" : "text-loss"
+              }`}
+            >
+              {fmtUSD(t.realizedPnl)}
             </p>
+          </div>
+          <span className={`badge text-xs ${posBadge}`}>{t.positionType}</span>
+          {(t.aiAnalysis || t.chartUrl) && (
+            <span className="w-1.5 h-1.5 rounded-full bg-accent-light shrink-0" title="Has analysis" />
           )}
-        </div>
-      </div>
-
-      {/* Upload / Analyze */}
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3
-                     file:rounded-lg file:border-0 file:text-sm file:font-medium
-                     file:bg-surface-300 file:text-gray-200 hover:file:bg-surface-400
-                     file:cursor-pointer file:transition-colors"
-        />
-        <button
-          onClick={analyze}
-          disabled={busy}
-          className="btn-primary text-sm px-4 py-1.5 disabled:opacity-50"
-        >
-          {busy ? "Analyzing..." : "Analyze"}
-        </button>
-        {t.chartUrl && (
-          <a
-            href={t.chartUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-accent-light hover:text-accent text-sm transition-colors"
+          <svg
+            className={`w-4 h-4 text-gray-500 transition-transform ${expanded ? "rotate-180" : ""}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
           >
-            View chart
-          </a>
-        )}
-      </div>
-
-      {/* AI result */}
-      {t.aiAnalysis && (
-        <div className="mt-4 p-4 rounded-lg bg-surface-200/50 border border-surface-300">
-          <p className="text-xs font-semibold text-accent-light mb-1.5">
-            AI Analysis
-          </p>
-          <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
-            {t.aiAnalysis}
-          </p>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
-      )}
+      </button>
 
-      {t.notes && (
-        <p className="text-gray-500 text-sm mt-3 italic">{t.notes}</p>
+      {/* Expanded details */}
+      {expanded && (
+        <div className="px-5 pb-5 border-t border-surface-300/50">
+          <div className="pt-4 space-y-4">
+            {/* Upload / Analyze */}
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3
+                           file:rounded-lg file:border-0 file:text-sm file:font-medium
+                           file:bg-surface-300 file:text-gray-200 hover:file:bg-surface-400
+                           file:cursor-pointer file:transition-colors"
+              />
+              <button
+                onClick={analyze}
+                disabled={busy}
+                className="btn-primary text-sm px-4 py-1.5 disabled:opacity-50"
+              >
+                {busy ? "Analyzing..." : "Analyze"}
+              </button>
+              {t.chartUrl && (
+                <a
+                  href={t.chartUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-accent-light hover:text-accent text-sm transition-colors"
+                >
+                  View chart
+                </a>
+              )}
+            </div>
+
+            {/* AI result */}
+            {t.aiAnalysis && (
+              <div className="p-4 rounded-lg bg-surface-200/50 border border-surface-300">
+                <p className="text-xs font-semibold text-accent-light mb-1.5">
+                  AI Analysis
+                </p>
+                <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
+                  {t.aiAnalysis}
+                </p>
+              </div>
+            )}
+
+            {t.notes && (
+              <p className="text-gray-500 text-sm italic">{t.notes}</p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
