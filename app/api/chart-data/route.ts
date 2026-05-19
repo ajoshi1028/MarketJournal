@@ -35,11 +35,12 @@ export async function GET(req: NextRequest) {
       headers: { "User-Agent": "Mozilla/5.0" },
     });
 
-    if (!res.ok) {
-      return NextResponse.json({ error: "Failed to fetch data" }, { status: 502 });
+    const data = await res.json();
+
+    if (!res.ok || data?.chart?.error) {
+      return NextResponse.json({ candles: [], error: data?.chart?.error?.description || "No data available" });
     }
 
-    const data = await res.json();
     const result = data?.chart?.result?.[0];
 
     if (!result?.timestamp || !result?.indicators?.quote?.[0]) {

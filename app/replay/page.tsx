@@ -279,9 +279,19 @@ function TradeChart({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chartData, setChartData] = useState<ChartData | null>(null);
-  const [interval, setInterval] = useState("15m");
 
   const entry = new Date(entryDate);
+  const daysAgo = Math.floor((Date.now() - entry.getTime()) / 86400000);
+  const defaultInterval = daysAgo > 55 ? "1d" : "15m";
+  const [interval, setInterval] = useState(defaultInterval);
+  const prevEntryRef = useRef(entryDate);
+
+  if (prevEntryRef.current !== entryDate) {
+    prevEntryRef.current = entryDate;
+    const newDaysAgo = Math.floor((Date.now() - new Date(entryDate).getTime()) / 86400000);
+    const newDefault = newDaysAgo > 55 ? "1d" : "15m";
+    if (interval !== newDefault) setInterval(newDefault);
+  }
   const exit = exitDate ? new Date(exitDate) : entry;
 
   useEffect(() => {
