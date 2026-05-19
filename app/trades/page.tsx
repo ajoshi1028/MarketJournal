@@ -239,7 +239,14 @@ export default function TradesPage() {
       <div className="grid lg:grid-cols-2 gap-8">
         {/* ---- FORM ---- */}
         <div>
-          <h2 className="text-2xl font-bold text-white mb-5">New Trade</h2>
+          <h2 className="text-2xl font-bold text-white mb-1">New Trade</h2>
+          <p className="text-sm text-gray-500 mb-5">
+            Prefer to import automatically?{" "}
+            <a href="/sync" className="text-accent-light hover:underline">
+              Sync your trades via CSV
+            </a>{" "}
+            on the Sync page.
+          </p>
           <form onSubmit={handleSubmit} className="card p-6 space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
