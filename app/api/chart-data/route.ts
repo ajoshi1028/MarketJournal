@@ -7,6 +7,29 @@ const VALID_INTERVALS = new Set([
   "1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo",
 ]);
 
+const TICKER_MAP: Record<string, string> = {
+  NDXP: "^NDX",
+  NDX: "^NDX",
+  SPX: "^GSPC",
+  SPXW: "^GSPC",
+  XSP: "^GSPC",
+  RUT: "^RUT",
+  RUTW: "^RUT",
+  DJX: "^DJI",
+  VIX: "^VIX",
+  VIXW: "^VIX",
+  OEX: "^OEX",
+  XEO: "^OEX",
+  NDX100: "^NDX",
+  ES: "ES=F",
+  NQ: "NQ=F",
+  YM: "YM=F",
+  RTY: "RTY=F",
+  CL: "CL=F",
+  GC: "GC=F",
+  SI: "SI=F",
+};
+
 export async function GET(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -25,10 +48,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid interval" }, { status: 400 });
   }
 
+  const resolvedSymbol = TICKER_MAP[symbol.toUpperCase()] || symbol;
+
   const period1 = Math.floor(new Date(from).getTime() / 1000);
   const period2 = Math.floor(new Date(to).getTime() / 1000) + 86400;
 
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${period1}&period2=${period2}&interval=${interval}`;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(resolvedSymbol)}?period1=${period1}&period2=${period2}&interval=${interval}`;
 
   try {
     const res = await fetch(url, {
