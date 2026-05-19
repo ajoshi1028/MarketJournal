@@ -102,13 +102,22 @@ export default function CoachingPage() {
     else setCalMonth(calMonth + 1);
   }
 
+  function cleanMarkdown(text: string): string {
+    return text
+      .replace(/#{1,6}\s*\d*\.?\s*/g, "")
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/\*(.+?)\*/g, "$1")
+      .replace(/^-\s*/gm, "• ")
+      .trim();
+  }
+
   function formatCoaching(text: string) {
     const sections = text.split(/(?=(?:STRENGTHS|WEAKNESSES|ACTION ITEMS|RISK MANAGEMENT|NEXT WEEK FOCUS))/);
     return sections.map((section, i) => {
       const match = section.match(/^(STRENGTHS|WEAKNESSES|ACTION ITEMS|RISK MANAGEMENT|NEXT WEEK FOCUS)/);
       if (match) {
         const header = match[1];
-        const body = section.slice(header.length).trim();
+        const body = cleanMarkdown(section.slice(header.length));
         const color = header === "STRENGTHS" ? "text-profit"
           : header === "WEAKNESSES" ? "text-loss"
           : header === "ACTION ITEMS" ? "text-accent-light"
@@ -121,7 +130,7 @@ export default function CoachingPage() {
           </div>
         );
       }
-      return <p key={i} className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed mb-4">{section.trim()}</p>;
+      return <p key={i} className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed mb-4">{cleanMarkdown(section)}</p>;
     });
   }
 
