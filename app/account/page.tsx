@@ -360,7 +360,7 @@ export default function AccountPage() {
               <Tooltip
                 formatter={(v: number) => [`$${v.toLocaleString()}`, "P&L"]}
                 {...tooltipStyle}
-                cursor={{ stroke: "rgba(255,255,255,0.15)" }}
+                cursor={false}
               />
               <Line
                 type="monotone"
