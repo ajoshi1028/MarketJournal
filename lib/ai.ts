@@ -24,20 +24,15 @@ export async function analyzeTradeChart(
 ): Promise<string> {
   if (!process.env.OPENAI_API_KEY) return "";
 
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 8000 });
 
   const toIso = (d: Date | string | null | undefined) => {
     if (!d) return "—";
     return d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10);
   };
 
-  const toExpiry = (d: Date | string | null | undefined) => {
-    if (!d) return "—";
-    return d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10);
-  };
-
   const optionDesc = trade.optionType && trade.strike
-    ? `${trade.strike} ${trade.optionType}${trade.expiry ? ` exp ${toExpiry(trade.expiry)}` : ""}`
+    ? `${trade.strike} ${trade.optionType}${trade.expiry ? ` exp ${toIso(trade.expiry)}` : ""}`
     : "—";
 
   const entryTimeStr = trade.entryTime ? ` at ${trade.entryTime}` : "";

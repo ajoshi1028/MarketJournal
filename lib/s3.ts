@@ -34,5 +34,6 @@ export async function putPublicObject({
     }),
   );
 
-  return `https://${bucket}.s3.${region}.amazonaws.com/${encodeURIComponent(key)}`;
+  const encodedKey = key.split("/").map(encodeURIComponent).join("/");
+  return `https://${bucket}.s3.${region}.amazonaws.com/${encodedKey}`;
 }

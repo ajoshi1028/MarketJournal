@@ -347,6 +347,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (rows.length > 5000) {
+      return NextResponse.json(
+        { error: "CSV too large (5,000 row max). Please split into smaller files." },
+        { status: 400 }
+      );
+    }
+
     // 1) Try Robinhood-specific mapping first (your file)
     let fills: CanonicalFill[] = [];
     const headers = Object.keys(rows[0] || {});

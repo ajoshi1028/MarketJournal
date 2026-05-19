@@ -72,6 +72,9 @@ model TradeEntry {
   updatedAt DateTime @updatedAt
 
   legs TradeLeg[] @relation("TradeLegs")
+
+  @@index([userId])
+  @@index([userId, entryDate])
 }
 
 model TradeLeg {
@@ -85,6 +88,8 @@ model TradeLeg {
   expiry   DateTime
   quantity Int
   price    Float
+
+  @@index([tradeId])
 }
 
 model Journal {

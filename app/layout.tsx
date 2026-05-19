@@ -1,5 +1,5 @@
 import "./globals.css";
-import { ClerkProvider, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import NavBar from "./NavBar";
 
 export const metadata = {
