@@ -45,6 +45,7 @@ const tooltipStyle = {
     fontSize: "0.875rem",
   },
   labelStyle: { color: "#9ca3af" },
+  itemStyle: { color: "#e5e7eb" },
 };
 
 const fmtUSD = (n: number) =>
@@ -146,7 +147,7 @@ export default function AnalyticsPage() {
             <BarChart data={data.pnlByWeekday} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
               <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={{ stroke: "#2a2a38" }} tickLine={false} />
               <YAxis tickFormatter={(v) => `$${v}`} width={65} tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={{ stroke: "#2a2a38" }} tickLine={false} />
-              <Tooltip formatter={(v: number) => [fmtUSD(v), "P&L"]} {...tooltipStyle} />
+              <Tooltip formatter={(v: number) => [fmtUSD(v), "P&L"]} {...tooltipStyle} cursor={{ fill: "rgba(255,255,255,0.06)" }} />
               <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
                 {data.pnlByWeekday.map((d, i) => (
                   <Cell key={i} fill={d.pnl >= 0 ? "#22c55e" : "#ef4444"} />
@@ -167,7 +168,7 @@ export default function AnalyticsPage() {
             <BarChart data={data.monthlyPerformance} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#2a2a38" }} tickLine={false} />
               <YAxis tickFormatter={(v) => `$${v}`} width={65} tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={{ stroke: "#2a2a38" }} tickLine={false} />
-              <Tooltip formatter={(v: number) => [fmtUSD(v), "P&L"]} {...tooltipStyle} />
+              <Tooltip formatter={(v: number) => [fmtUSD(v), "P&L"]} {...tooltipStyle} cursor={{ fill: "rgba(255,255,255,0.06)" }} />
               <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
                 {data.monthlyPerformance.map((d, i) => (
                   <Cell key={i} fill={d.pnl >= 0 ? "#22c55e" : "#ef4444"} />

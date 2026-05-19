@@ -173,6 +173,7 @@ export default function AccountPage() {
       fontSize: "0.875rem",
     },
     labelStyle: { color: "#9ca3af" },
+    itemStyle: { color: "#e5e7eb" },
   };
 
   if (!isLoaded)
@@ -359,6 +360,7 @@ export default function AccountPage() {
               <Tooltip
                 formatter={(v: number) => [`$${v.toLocaleString()}`, "P&L"]}
                 {...tooltipStyle}
+                cursor={{ stroke: "rgba(255,255,255,0.15)" }}
               />
               <Line
                 type="monotone"
