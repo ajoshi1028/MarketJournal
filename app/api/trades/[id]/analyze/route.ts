@@ -97,5 +97,5 @@ export async function POST(
 
   if (!access.isPro) await incrementUsage(userId, "aiAnalysis");
 
-  return NextResponse.json({ aiAnalysis: aiText });
+  return NextResponse.json({ aiAnalysis: aiText, chartUrl });
 }

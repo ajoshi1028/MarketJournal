@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useImperativeHandle, forwardRef } from "react";
 import {
   createChart,
   ColorType,
@@ -47,6 +47,8 @@ export default function ReplayPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [selected, setSelected] = useState<Trade | null>(null);
   const [loading, setLoading] = useState(true);
+  const [analyzing, setAnalyzing] = useState(false);
+  const chartRef = useRef<TradeChartHandle>(null);
 
   useEffect(() => {
     (async () => {
@@ -223,10 +225,53 @@ export default function ReplayPage() {
 
               {/* Historical chart for trade date range */}
               <div className="card p-5">
-                <h3 className="text-sm font-semibold text-gray-400 mb-3">
-                  Trade Chart
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-400">
+                    Trade Chart
+                  </h3>
+                  <button
+                    onClick={async () => {
+                      if (!selected || !chartRef.current) return;
+                      setAnalyzing(true);
+                      try {
+                        const blob = await chartRef.current.takeScreenshot();
+                        if (!blob) { alert("Could not capture chart."); return; }
+                        const fd = new FormData();
+                        fd.append("chartImage", blob, `${selected.ticker}-chart.png`);
+                        const res = await fetch(
+                          `/api/trades/${encodeURIComponent(selected.id)}/analyze`,
+                          { method: "POST", body: fd },
+                        );
+                        if (!res.ok) {
+                          const txt = await res.text().catch(() => "");
+                          alert(`Analyze failed: ${res.status}\n${txt}`);
+                          return;
+                        }
+                        const data = await res.json();
+                        setSelected((prev) =>
+                          prev ? { ...prev, aiAnalysis: data.aiAnalysis, chartUrl: data.chartUrl } : prev,
+                        );
+                        setTrades((prev) =>
+                          prev.map((t) =>
+                            t.id === selected.id
+                              ? { ...t, aiAnalysis: data.aiAnalysis, chartUrl: data.chartUrl }
+                              : t,
+                          ),
+                        );
+                      } catch {
+                        alert("Failed to analyze.");
+                      } finally {
+                        setAnalyzing(false);
+                      }
+                    }}
+                    disabled={analyzing}
+                    className="btn-primary text-xs px-3 py-1.5 disabled:opacity-50"
+                  >
+                    {analyzing ? "Analyzing..." : "Snapshot & Analyze"}
+                  </button>
+                </div>
                 <TradeChart
+                  ref={chartRef}
                   symbol={selected.ticker}
                   entryDate={selected.entryDate}
                   exitDate={selected.sellDate}
@@ -264,15 +309,15 @@ const INTERVALS = [
   { label: "1W", value: "1wk" },
 ];
 
-function TradeChart({
-  symbol,
-  entryDate,
-  exitDate,
-}: {
+type TradeChartHandle = {
+  takeScreenshot: () => Promise<Blob | null>;
+};
+
+const TradeChart = forwardRef<TradeChartHandle, {
   symbol: string;
   entryDate: string;
   exitDate?: string | null;
-}) {
+}>(function TradeChart({ symbol, entryDate, exitDate }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
   const roRef = useRef<ResizeObserver | null>(null);
@@ -293,6 +338,16 @@ function TradeChart({
     if (interval !== newDefault) setInterval(newDefault);
   }
   const exit = exitDate ? new Date(exitDate) : entry;
+
+  useImperativeHandle(ref, () => ({
+    takeScreenshot: () => {
+      return new Promise<Blob | null>((resolve) => {
+        if (!chartRef.current) { resolve(null); return; }
+        const canvas = chartRef.current.takeScreenshot();
+        canvas.toBlob((blob) => resolve(blob), "image/png");
+      });
+    },
+  }));
 
   useEffect(() => {
     let cancelled = false;
@@ -485,4 +540,4 @@ function TradeChart({
       />
     </div>
   );
-}
+});
