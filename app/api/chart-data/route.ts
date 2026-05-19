@@ -3,6 +3,10 @@ import { auth } from "@clerk/nextjs/server";
 
 export const runtime = "nodejs";
 
+const VALID_INTERVALS = new Set([
+  "1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo",
+]);
+
 export async function GET(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -11,15 +15,20 @@ export async function GET(req: NextRequest) {
   const symbol = searchParams.get("symbol");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const interval = searchParams.get("interval") || "1d";
 
   if (!symbol || !from || !to) {
     return NextResponse.json({ error: "Missing symbol, from, or to" }, { status: 400 });
   }
 
+  if (!VALID_INTERVALS.has(interval)) {
+    return NextResponse.json({ error: "Invalid interval" }, { status: 400 });
+  }
+
   const period1 = Math.floor(new Date(from).getTime() / 1000);
   const period2 = Math.floor(new Date(to).getTime() / 1000) + 86400;
 
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${period1}&period2=${period2}&interval=1d`;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${period1}&period2=${period2}&interval=${interval}`;
 
   try {
     const res = await fetch(url, {
@@ -39,6 +48,7 @@ export async function GET(req: NextRequest) {
 
     const timestamps: number[] = result.timestamp;
     const quote = result.indicators.quote[0];
+    const isIntraday = !interval.includes("d") && !interval.includes("wk") && !interval.includes("mo");
 
     const candles = timestamps
       .map((ts: number, i: number) => {
@@ -47,6 +57,17 @@ export async function GET(req: NextRequest) {
         const l = quote.low?.[i];
         const c = quote.close?.[i];
         if (o == null || h == null || l == null || c == null) return null;
+
+        if (isIntraday) {
+          return {
+            time: ts,
+            open: +o.toFixed(2),
+            high: +h.toFixed(2),
+            low: +l.toFixed(2),
+            close: +c.toFixed(2),
+          };
+        }
+
         const d = new Date(ts * 1000);
         return {
           time: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
@@ -58,7 +79,7 @@ export async function GET(req: NextRequest) {
       })
       .filter(Boolean);
 
-    return NextResponse.json({ candles });
+    return NextResponse.json({ candles, isIntraday });
   } catch {
     return NextResponse.json({ error: "Chart data unavailable" }, { status: 502 });
   }

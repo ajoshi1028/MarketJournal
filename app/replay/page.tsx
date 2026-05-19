@@ -252,7 +252,17 @@ export default function ReplayPage() {
   );
 }
 
-type ChartData = { candles: CandlestickData<Time>[] };
+type ChartData = { candles: CandlestickData<Time>[]; isIntraday?: boolean };
+
+const INTERVALS = [
+  { label: "1m", value: "1m" },
+  { label: "5m", value: "5m" },
+  { label: "15m", value: "15m" },
+  { label: "30m", value: "30m" },
+  { label: "1h", value: "60m" },
+  { label: "1D", value: "1d" },
+  { label: "1W", value: "1wk" },
+];
 
 function TradeChart({
   symbol,
@@ -269,19 +279,29 @@ function TradeChart({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chartData, setChartData] = useState<ChartData | null>(null);
+  const [interval, setInterval] = useState("15m");
 
   const entry = new Date(entryDate);
   const exit = exitDate ? new Date(exitDate) : entry;
-  const entryStr = entry.toISOString().slice(0, 10);
-  const exitStr = exit.toISOString().slice(0, 10);
 
   useEffect(() => {
     let cancelled = false;
 
+    const isIntraday = !interval.includes("d") && !interval.includes("wk");
+
     const padBefore = new Date(entry);
-    padBefore.setDate(padBefore.getDate() - 30);
     const padAfter = new Date(exit);
-    padAfter.setDate(padAfter.getDate() + 10);
+
+    if (isIntraday) {
+      padBefore.setDate(padBefore.getDate() - 1);
+      padAfter.setDate(padAfter.getDate() + 1);
+    } else if (interval === "1wk") {
+      padBefore.setDate(padBefore.getDate() - 60);
+      padAfter.setDate(padAfter.getDate() + 20);
+    } else {
+      padBefore.setDate(padBefore.getDate() - 30);
+      padAfter.setDate(padAfter.getDate() + 10);
+    }
 
     const from = padBefore.toISOString().slice(0, 10);
     const to = padAfter.toISOString().slice(0, 10);
@@ -290,7 +310,9 @@ function TradeChart({
     setError(null);
     setChartData(null);
 
-    fetch(`/api/chart-data?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}`)
+    fetch(
+      `/api/chart-data?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}&interval=${interval}`,
+    )
       .then((res) => {
         if (!res.ok) throw new Error("Failed");
         return res.json();
@@ -298,7 +320,11 @@ function TradeChart({
       .then((data) => {
         if (cancelled) return;
         if (!data.candles?.length) {
-          setError("No chart data available for this date range.");
+          setError(
+            isIntraday
+              ? "No intraday data available — try a larger timeframe (1D or 1W). Yahoo Finance only keeps ~60 days of intraday data."
+              : "No chart data available for this date range.",
+          );
           setLoading(false);
           return;
         }
@@ -314,7 +340,7 @@ function TradeChart({
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol, entryDate, exitDate]);
+  }, [symbol, entryDate, exitDate, interval]);
 
   useEffect(() => {
     if (!chartData || !containerRef.current) return;
@@ -329,6 +355,7 @@ function TradeChart({
     }
 
     const container = containerRef.current;
+    const isIntraday = chartData.isIntraday === true;
 
     const chart = createChart(container, {
       width: container.clientWidth,
@@ -347,8 +374,9 @@ function TradeChart({
       },
       timeScale: {
         borderColor: "#2a2a38",
-        timeVisible: false,
-        barSpacing: 12,
+        timeVisible: isIntraday,
+        secondsVisible: false,
+        barSpacing: isIntraday ? 6 : 12,
       },
       rightPriceScale: {
         borderColor: "#2a2a38",
@@ -366,26 +394,31 @@ function TradeChart({
 
     candleSeries.setData(chartData.candles);
 
-    createSeriesMarkers(candleSeries, [
-      {
-        time: entryStr as Time,
-        position: "belowBar",
-        color: "#6366f1",
-        shape: "arrowUp",
-        text: "Entry",
-      },
-      ...(exitDate
-        ? [
-            {
-              time: exitStr as Time,
-              position: "aboveBar" as const,
-              color: "#f59e0b",
-              shape: "arrowDown" as const,
-              text: "Exit",
-            },
-          ]
-        : []),
-    ]);
+    if (!isIntraday) {
+      const entryStr = entry.toISOString().slice(0, 10);
+      const exitStr = exit.toISOString().slice(0, 10);
+
+      createSeriesMarkers(candleSeries, [
+        {
+          time: entryStr as Time,
+          position: "belowBar",
+          color: "#6366f1",
+          shape: "arrowUp",
+          text: "Entry",
+        },
+        ...(exitDate
+          ? [
+              {
+                time: exitStr as Time,
+                position: "aboveBar" as const,
+                color: "#f59e0b",
+                shape: "arrowDown" as const,
+                text: "Exit",
+              },
+            ]
+          : []),
+      ]);
+    }
 
     chart.timeScale().fitContent();
     chartRef.current = chart;
@@ -410,6 +443,21 @@ function TradeChart({
 
   return (
     <div className="rounded-lg overflow-hidden border border-surface-300 relative">
+      <div className="flex items-center gap-1 px-3 py-2 bg-surface-200 border-b border-surface-300">
+        {INTERVALS.map((iv) => (
+          <button
+            key={iv.value}
+            onClick={() => setInterval(iv.value)}
+            className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+              interval === iv.value
+                ? "bg-accent text-white"
+                : "text-gray-400 hover:text-gray-200 hover:bg-surface-300"
+            }`}
+          >
+            {iv.label}
+          </button>
+        ))}
+      </div>
       {loading && (
         <div className="h-[400px] flex items-center justify-center text-gray-500 text-sm">
           <div className="inline-block w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin mr-2" />
@@ -417,7 +465,7 @@ function TradeChart({
         </div>
       )}
       {error && (
-        <div className="h-[400px] flex items-center justify-center text-gray-500 text-sm">
+        <div className="h-[400px] flex items-center justify-center text-gray-500 text-sm px-6 text-center">
           {error}
         </div>
       )}
