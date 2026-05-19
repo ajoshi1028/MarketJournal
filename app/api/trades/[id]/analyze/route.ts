@@ -85,7 +85,7 @@ export async function POST(
       upgradeRequired: true,
     }, { status: 403 });
 
-  const { success } = rateLimit(`analyze:${userId}`, 20, 60 * 60 * 1000);
+  const { success } = await rateLimit(`analyze:${userId}`, 20, 60 * 60 * 1000);
   if (!success)
     return NextResponse.json({ error: "Rate limit exceeded. Try again later." }, { status: 429 });
 
