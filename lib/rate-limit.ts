@@ -1,25 +1,31 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-const redis =
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? new Redis({
-        url: process.env.UPSTASH_REDIS_REST_URL,
-        token: process.env.UPSTASH_REDIS_REST_TOKEN,
-      })
-    : null;
+let redis: Redis | null = null;
+
+function getRedis(): Redis | null {
+  if (redis) return redis;
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+  }
+  return redis;
+}
 
 const limiters = new Map<string, Ratelimit>();
 
 function getLimiter(limit: number, windowMs: number): Ratelimit | null {
-  if (!redis) return null;
+  const r = getRedis();
+  if (!r) return null;
 
   const cacheKey = `${limit}:${windowMs}`;
   let limiter = limiters.get(cacheKey);
   if (!limiter) {
     const windowSec = Math.max(1, Math.round(windowMs / 1000));
     limiter = new Ratelimit({
-      redis,
+      redis: r,
       limiter: Ratelimit.slidingWindow(limit, `${windowSec} s`),
       prefix: "rl",
     });
