@@ -29,9 +29,9 @@
   /* Dark theme for date/time picker icons and dropdowns */
   input[type="date"]::-webkit-calendar-picker-indicator,
   input[type="time"]::-webkit-calendar-picker-indicator {
-    filter: invert(0.7);
+    filter: invert(1);
     cursor: pointer;
-    opacity: 0.6;
+    opacity: 0.85;
     transition: opacity 0.15s;
   }
   input[type="date"]::-webkit-calendar-picker-indicator:hover,
