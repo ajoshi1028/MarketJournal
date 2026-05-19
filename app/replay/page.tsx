@@ -2,7 +2,15 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import {
+  createChart,
+  ColorType,
+  CandlestickData,
+  Time,
+  createSeriesMarkers,
+} from "lightweight-charts";
+import { CandlestickSeries } from "lightweight-charts";
 
 type Trade = {
   id: string;
@@ -213,12 +221,16 @@ export default function ReplayPage() {
                 </div>
               )}
 
-              {/* Live TradingView chart */}
+              {/* Historical chart for trade date range */}
               <div className="card p-5">
                 <h3 className="text-sm font-semibold text-gray-400 mb-3">
-                  Current Chart
+                  Trade Chart
                 </h3>
-                <TradingViewWidget symbol={selected.ticker} />
+                <TradeChart
+                  symbol={selected.ticker}
+                  entryDate={selected.entryDate}
+                  exitDate={selected.sellDate}
+                />
               </div>
 
               {/* AI Analysis */}
@@ -240,42 +252,158 @@ export default function ReplayPage() {
   );
 }
 
-function TradingViewWidget({ symbol }: { symbol: string }) {
+function TradeChart({
+  symbol,
+  entryDate,
+  exitDate,
+}: {
+  symbol: string;
+  entryDate: string;
+  exitDate?: string | null;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAndRender = useCallback(async () => {
+    if (!containerRef.current) return;
+    setLoading(true);
+    setError(null);
+
+    const entry = new Date(entryDate);
+    const exit = exitDate ? new Date(exitDate) : entry;
+
+    const padBefore = new Date(entry);
+    padBefore.setDate(padBefore.getDate() - 15);
+    const padAfter = new Date(exit);
+    padAfter.setDate(padAfter.getDate() + 5);
+
+    const from = padBefore.toISOString().slice(0, 10);
+    const to = padAfter.toISOString().slice(0, 10);
+
+    try {
+      const res = await fetch(
+        `/api/chart-data?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}`,
+      );
+      if (!res.ok) throw new Error("Failed to load chart data");
+      const data = await res.json();
+
+      if (!data.candles?.length) {
+        setError("No chart data available for this date range.");
+        setLoading(false);
+        return;
+      }
+
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+      }
+
+      const chart = createChart(containerRef.current, {
+        width: containerRef.current.clientWidth,
+        height: 400,
+        layout: {
+          background: { type: ColorType.Solid, color: "#0e0e14" },
+          textColor: "#9ca3af",
+        },
+        grid: {
+          vertLines: { color: "rgba(42, 42, 56, 0.3)" },
+          horzLines: { color: "rgba(42, 42, 56, 0.3)" },
+        },
+        crosshair: {
+          vertLine: { color: "#6366f1", width: 1, style: 2 },
+          horzLine: { color: "#6366f1", width: 1, style: 2 },
+        },
+        timeScale: {
+          borderColor: "#2a2a38",
+          timeVisible: false,
+        },
+        rightPriceScale: {
+          borderColor: "#2a2a38",
+        },
+      });
+
+      const candleSeries = chart.addSeries(CandlestickSeries, {
+        upColor: "#22c55e",
+        downColor: "#ef4444",
+        borderDownColor: "#ef4444",
+        borderUpColor: "#22c55e",
+        wickDownColor: "#ef4444",
+        wickUpColor: "#22c55e",
+      });
+
+      candleSeries.setData(data.candles as CandlestickData<Time>[]);
+
+      const entryStr = entry.toISOString().slice(0, 10);
+      const exitStr = exit.toISOString().slice(0, 10);
+
+      createSeriesMarkers(candleSeries, [
+        {
+          time: entryStr as Time,
+          position: "belowBar",
+          color: "#6366f1",
+          shape: "arrowUp",
+          text: "Entry",
+        },
+        ...(exitDate
+          ? [
+              {
+                time: exitStr as Time,
+                position: "aboveBar" as const,
+                color: "#f59e0b",
+                shape: "arrowDown" as const,
+                text: "Exit",
+              },
+            ]
+          : []),
+      ]);
+
+      chart.timeScale().fitContent();
+      chartRef.current = chart;
+
+      const ro = new ResizeObserver(() => {
+        if (containerRef.current && chartRef.current) {
+          chartRef.current.applyOptions({
+            width: containerRef.current.clientWidth,
+          });
+        }
+      });
+      ro.observe(containerRef.current);
+
+      setLoading(false);
+
+      return () => ro.disconnect();
+    } catch {
+      setError("Could not load chart data.");
+      setLoading(false);
+    }
+  }, [symbol, entryDate, exitDate]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    containerRef.current.innerHTML = "";
-
-    const script = document.createElement("script");
-    script.src =
-      "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
-    script.type = "text/javascript";
-    script.async = true;
-    script.innerHTML = JSON.stringify({
-      autosize: true,
-      symbol: symbol,
-      interval: "D",
-      timezone: "Etc/UTC",
-      theme: "dark",
-      style: "1",
-      locale: "en",
-      backgroundColor: "rgba(14, 14, 20, 1)",
-      gridColor: "rgba(42, 42, 56, 0.3)",
-      allow_symbol_change: true,
-      support_host: "https://www.tradingview.com",
-    });
-
-    containerRef.current.appendChild(script);
-  }, [symbol]);
+    fetchAndRender();
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+      }
+    };
+  }, [fetchAndRender]);
 
   return (
-    <div className="h-[400px] rounded-lg overflow-hidden border border-surface-300">
-      <div
-        className="tradingview-widget-container"
-        ref={containerRef}
-        style={{ height: "100%", width: "100%" }}
-      />
+    <div className="rounded-lg overflow-hidden border border-surface-300">
+      {loading && (
+        <div className="h-[400px] flex items-center justify-center text-gray-500 text-sm">
+          <div className="inline-block w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin mr-2" />
+          Loading chart...
+        </div>
+      )}
+      {error && (
+        <div className="h-[400px] flex items-center justify-center text-gray-500 text-sm">
+          {error}
+        </div>
+      )}
+      <div ref={containerRef} style={{ display: loading || error ? "none" : "block" }} />
     </div>
   );
 }
