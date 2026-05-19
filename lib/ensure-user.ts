@@ -19,7 +19,7 @@ export async function ensureUser(userId: string) {
 
   await prisma.user.upsert({
     where: { email },
-    update: { id: userId, name: name ?? undefined },
+    update: { name: name ?? undefined },
     create: { id: userId, email, name },
   });
 }
