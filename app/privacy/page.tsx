@@ -95,8 +95,8 @@ export default function PrivacyPage() {
           <h2 className="text-lg font-semibold text-white mb-2">9. Contact</h2>
           <p>
             If you have questions about this privacy policy or your data, contact us at{" "}
-            <a href="mailto:abhinavjoshi1028@gmail.com" className="text-accent-light hover:text-accent">
-              abhinavjoshi1028@gmail.com
+            <a href="mailto:supportmarketjournal@gmail.com" className="text-accent-light hover:text-accent">
+              supportmarketjournal@gmail.com
             </a>.
           </p>
         </section>
