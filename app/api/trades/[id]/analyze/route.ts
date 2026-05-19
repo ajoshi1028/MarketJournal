@@ -8,6 +8,7 @@ import { checkFeatureAccess, incrementUsage } from "@/lib/subscription";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;

@@ -7,6 +7,7 @@ import OpenAI from "openai";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 // GET — fetch history or a specific date's report
 export async function GET(req: NextRequest) {
@@ -192,7 +193,7 @@ Provide your coaching in these sections:
 
 Be direct, specific, and reference actual numbers. No generic advice. ~400 words.`;
 
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 8000 });
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 25000, maxRetries: 1 });
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     temperature: 0.4,
