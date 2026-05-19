@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useEffect, useState, useRef, useCallback, useImperativeHandle, forwardRef } from "react";
 import {
   createChart,

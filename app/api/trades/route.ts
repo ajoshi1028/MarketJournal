@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { putPublicObject } from "@/lib/s3";
 import { analyzeTradeChart } from "@/lib/ai";
 import { rateLimit } from "@/lib/rate-limit";
 import { checkFeatureAccess, incrementUsage } from "@/lib/subscription";
+import { ensureUser } from "@/lib/ensure-user";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
@@ -57,35 +58,6 @@ function sanitizeString(val: unknown, maxLen: number): string {
   return String(val ?? "")
     .trim()
     .slice(0, maxLen);
-}
-
-async function ensureUser(userId: string) {
-  const existing = await prisma.user.findUnique({ where: { id: userId } });
-  if (existing) return;
-
-  const client = await clerkClient();
-  const cu = await client.users.getUser(userId).catch(() => null);
-  const email = (
-    cu?.primaryEmailAddress?.emailAddress ??
-    cu?.emailAddresses?.[0]?.emailAddress ??
-    `${userId}@placeholder.local`
-  ).toLowerCase();
-  const name =
-    (cu?.fullName ??
-    [cu?.firstName, cu?.lastName].filter(Boolean).join(" ")) ||
-    null;
-
-  const existingByEmail = await prisma.user.findUnique({ where: { email } });
-  if (existingByEmail) {
-    await prisma.user.update({
-      where: { email },
-      data: { id: userId, name: name ?? existingByEmail.name },
-    });
-  } else {
-    await prisma.user.create({
-      data: { id: userId, email, name },
-    });
-  }
 }
 
 export async function GET() {

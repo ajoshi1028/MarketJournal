@@ -1,38 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { ensureUser } from "@/lib/ensure-user";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-async function ensureUser(userId: string) {
-  const existing = await prisma.user.findUnique({ where: { id: userId } });
-  if (existing) return;
-
-  const client = await clerkClient();
-  const cu = await client.users.getUser(userId).catch(() => null);
-  const email = (
-    cu?.primaryEmailAddress?.emailAddress ??
-    cu?.emailAddresses?.[0]?.emailAddress ??
-    `${userId}@placeholder.local`
-  ).toLowerCase();
-  const name =
-    (cu?.fullName ??
-    [cu?.firstName, cu?.lastName].filter(Boolean).join(" ")) ||
-    null;
-
-  const existingByEmail = await prisma.user.findUnique({ where: { email } });
-  if (existingByEmail) {
-    await prisma.user.update({
-      where: { email },
-      data: { id: userId, name: name ?? existingByEmail.name },
-    });
-  } else {
-    await prisma.user.create({
-      data: { id: userId, email, name },
-    });
-  }
-}
 
 export async function GET() {
   const { userId } = await auth();
@@ -83,6 +55,9 @@ export async function PATCH(req: NextRequest) {
       data: { balance: { increment: Math.abs(amt) } },
     });
   } else {
+    const current = await prisma.account.findUnique({ where: { userId } });
+    if (current && current.balance < Math.abs(amt))
+      return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
     account = await prisma.account.update({
       where: { userId },
       data: { balance: { decrement: Math.abs(amt) } },

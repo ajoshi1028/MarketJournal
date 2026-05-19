@@ -60,9 +60,13 @@ export async function GET(req: NextRequest) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(resolvedSymbol)}?period1=${period1}&period2=${period2}&interval=${interval}`;
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0" },
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     const data = await res.json();
 
@@ -109,7 +113,9 @@ export async function GET(req: NextRequest) {
       })
       .filter(Boolean);
 
-    return NextResponse.json({ candles, isIntraday });
+    const response = NextResponse.json({ candles, isIntraday });
+    response.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    return response;
   } catch {
     return NextResponse.json({ error: "Chart data unavailable" }, { status: 502 });
   }

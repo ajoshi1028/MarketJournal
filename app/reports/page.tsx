@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useState } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -39,7 +37,6 @@ const fmtUSD = (n: number) =>
 
 export default function ReportsPage() {
   const [loading, setLoading] = useState(false);
-  const [period, setPeriod] = useState<"weekly" | "monthly" | "all">("monthly");
 
   async function generatePDF() {
     setLoading(true);
@@ -111,7 +108,7 @@ export default function ReportsPage() {
         margin: { left: 14, right: 14 },
       });
 
-      y = ((doc as unknown as Record<string, { finalY: number }>).lastAutoTable?.finalY ?? y) + 12 || y +100;
+      y = ((doc as unknown as Record<string, { finalY: number }>).lastAutoTable?.finalY ?? y) + 12;
 
       if (data.byStrategy.length > 0) {
         doc.setFontSize(13);
@@ -134,7 +131,7 @@ export default function ReportsPage() {
           margin: { left: 14, right: 14 },
         });
 
-        y = ((doc as unknown as Record<string, { finalY: number }>).lastAutoTable?.finalY ?? y) + 12 || y +60;
+        y = ((doc as unknown as Record<string, { finalY: number }>).lastAutoTable?.finalY ?? y) + 12;
       }
 
       if (data.byTicker.length > 0) {
@@ -163,7 +160,7 @@ export default function ReportsPage() {
           margin: { left: 14, right: 14 },
         });
 
-        y = ((doc as unknown as Record<string, { finalY: number }>).lastAutoTable?.finalY ?? y) + 12 || y +60;
+        y = ((doc as unknown as Record<string, { finalY: number }>).lastAutoTable?.finalY ?? y) + 12;
       }
 
       if (data.monthlyPerformance.length > 0) {
