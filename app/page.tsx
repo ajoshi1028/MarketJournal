@@ -236,7 +236,7 @@ export default function HomePage() {
                 ))}
               </ul>
               <Link href="/sign-up" className="btn-primary block text-center py-2.5">
-                Start Free Trial
+                Upgrade
               </Link>
             </div>
           </div>
