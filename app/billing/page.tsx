@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 const FREE_FEATURES = [
@@ -35,9 +35,22 @@ function BillingContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   const success = searchParams.get("success");
   const canceled = searchParams.get("canceled");
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/usage", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          setIsPro(data.isPro === true);
+        }
+      } catch {}
+    })();
+  }, []);
 
   async function handleCheckout() {
     setLoading(true);
@@ -89,7 +102,7 @@ function BillingContent() {
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Free */}
-        <div className="card p-6 relative">
+        <div className={`card p-6 relative ${!isPro ? "border-accent/40 shadow-glow" : ""}`}>
           <h2 className="text-lg font-bold text-white mb-1">Free</h2>
           <p className="text-3xl font-bold text-white mb-1">
             $0<span className="text-sm font-normal text-gray-500">/month</span>
@@ -107,14 +120,23 @@ function BillingContent() {
               </li>
             ))}
           </ul>
-          <div className="text-sm text-gray-600">Current free tier</div>
+          {!isPro && (
+            <div className="text-sm text-accent-light font-medium">Current plan</div>
+          )}
         </div>
 
         {/* Pro */}
-        <div className="card p-6 relative border-accent/40 shadow-glow">
-          <div className="absolute -top-3 left-6 bg-accent px-3 py-1 rounded-full text-xs font-bold text-white">
-            POPULAR
-          </div>
+        <div className={`card p-6 relative ${isPro ? "border-accent/40 shadow-glow" : ""}`}>
+          {!isPro && (
+            <div className="absolute -top-3 left-6 bg-accent px-3 py-1 rounded-full text-xs font-bold text-white">
+              POPULAR
+            </div>
+          )}
+          {isPro && (
+            <div className="absolute -top-3 left-6 bg-profit px-3 py-1 rounded-full text-xs font-bold text-white">
+              ACTIVE
+            </div>
+          )}
           <h2 className="text-lg font-bold text-white mb-1">Pro</h2>
           <p className="text-3xl font-bold text-white mb-1">
             $19.99
@@ -133,13 +155,17 @@ function BillingContent() {
               </li>
             ))}
           </ul>
-          <button
-            onClick={handleCheckout}
-            disabled={loading}
-            className="btn-primary w-full disabled:opacity-50"
-          >
-            {loading ? "Loading..." : "Upgrade to Pro"}
-          </button>
+          {isPro ? (
+            <div className="text-sm text-profit font-medium">Current plan</div>
+          ) : (
+            <button
+              onClick={handleCheckout}
+              disabled={loading}
+              className="btn-primary w-full disabled:opacity-50"
+            >
+              {loading ? "Loading..." : "Upgrade to Pro"}
+            </button>
+          )}
         </div>
       </div>
 
