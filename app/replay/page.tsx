@@ -212,15 +212,14 @@ export default function ReplayPage() {
               {/* Historical chart for trade date range */}
               <div className="card p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-400">
-                      Trade Chart
-                    </h3>
-                    <p className="text-xs text-gray-600 mt-0.5">
-                      Snapshots the chart, saves it to Track, and runs AI analysis.
+                  <h3 className="text-sm font-semibold text-gray-400">
+                    Trade Chart
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <p className="text-xs text-gray-600 hidden sm:block">
+                      Snapshots chart, saves to Track, and runs AI analysis
                     </p>
-                  </div>
-                  <button
+                    <button
                     onClick={async () => {
                       if (!selected || !chartRef.current) return;
                       setAnalyzing(true);
@@ -260,6 +259,7 @@ export default function ReplayPage() {
                   >
                     {analyzing ? "Analyzing..." : "Analyze"}
                   </button>
+                  </div>
                 </div>
                 <TradeChart
                   ref={chartRef}

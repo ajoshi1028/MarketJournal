@@ -176,43 +176,7 @@ export default function SyncPage() {
         ))}
       </div>
 
-      {/* Setup guide */}
-      <div className="card p-6 mt-6">
-        <h2 className="text-base font-semibold text-white mb-3">
-          API Integration Setup Guide
-        </h2>
-        <div className="space-y-4 text-sm text-gray-400">
-          <div>
-            <h3 className="text-gray-200 font-medium mb-1">
-              Charles Schwab API
-            </h3>
-            <p>
-              1. Register at developer.schwab.com for an API key. 2. Create an
-              app and get your client ID/secret. 3. Add the credentials to your
-              environment variables. We will handle the OAuth flow and trade
-              sync.
-            </p>
-          </div>
-          <div>
-            <h3 className="text-gray-200 font-medium mb-1">
-              Interactive Brokers
-            </h3>
-            <p>
-              1. Go to Account Management → Reports → Flex Queries. 2. Create a
-              new Activity Flex Query selecting Trades. 3. Save the query token
-              and add it to your environment variables.
-            </p>
-          </div>
-          <div>
-            <h3 className="text-gray-200 font-medium mb-1">Tastytrade</h3>
-            <p>
-              1. Log into the Tastytrade API sandbox at api.tastyworks.com. 2.
-              Generate a session token with your credentials. 3. The API
-              provides real-time positions and transaction history.
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Setup guides will be added when API integrations launch */}
     </main>
   );
 }

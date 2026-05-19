@@ -271,12 +271,7 @@ function TradeRow({
   const [file, setFile] = useState<File | null>(null);
   const [expanded, setExpanded] = useState(false);
 
-  const borderColor =
-    t.outcome === "PROFIT"
-      ? "border-profit/30"
-      : t.outcome === "LOSS"
-        ? "border-loss/30"
-        : "border-surface-300";
+  const borderColor = "border-white/10";
 
   const bgTint =
     t.outcome === "PROFIT"
