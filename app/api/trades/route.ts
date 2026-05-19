@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { putPublicObject } from "@/lib/s3";
-import { analyzeTradeChart } from "@/lib/ai";
 import { rateLimit } from "@/lib/rate-limit";
-import { checkFeatureAccess, incrementUsage } from "@/lib/subscription";
 import { ensureUser } from "@/lib/ensure-user";
 import crypto from "crypto";
 
@@ -209,24 +207,6 @@ export async function POST(req: NextRequest) {
       where: { id: trade.id },
       data: { chartUrl: url },
     });
-
-    if (process.env.OPENAI_API_KEY) {
-      const chartAccess = await checkFeatureAccess(userId, "aiChart");
-      if (chartAccess.allowed) {
-        try {
-          const aiText = await analyzeTradeChart(url, trade);
-          if (aiText) {
-            trade = await prisma.tradeEntry.update({
-              where: { id: trade.id },
-              data: { aiAnalysis: aiText },
-            });
-            if (!chartAccess.isPro) await incrementUsage(userId, "aiChart");
-          }
-        } catch {
-          // AI analysis is non-critical; trade is already saved
-        }
-      }
-    }
   }
 
   return NextResponse.json(trade, { status: 201 });
