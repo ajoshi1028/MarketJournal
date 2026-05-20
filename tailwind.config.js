@@ -21,8 +21,8 @@ module.exports = {
           dark: "#4f46e5",
           glow: "rgba(99, 102, 241, 0.15)",
         },
-        profit: { DEFAULT: "#22c55e", muted: "rgba(34, 197, 94, 0.15)" },
-        loss: { DEFAULT: "#ef4444", muted: "rgba(239, 68, 68, 0.15)" },
+        profit: { DEFAULT: "#34d399", muted: "rgba(52, 211, 153, 0.12)" },
+        loss: { DEFAULT: "#f87171", muted: "rgba(248, 113, 113, 0.12)" },
       },
       fontFamily: {
         sans: [

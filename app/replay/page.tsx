@@ -438,12 +438,12 @@ const TradeChart = forwardRef<TradeChartHandle, {
     });
 
     const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: "#22c55e",
-      downColor: "#ef4444",
-      borderDownColor: "#ef4444",
-      borderUpColor: "#22c55e",
-      wickDownColor: "#ef4444",
-      wickUpColor: "#22c55e",
+      upColor: "#34d399",
+      downColor: "#f87171",
+      borderDownColor: "#f87171",
+      borderUpColor: "#34d399",
+      wickDownColor: "#f87171",
+      wickUpColor: "#34d399",
     });
 
     candleSeries.setData(chartData.candles);
