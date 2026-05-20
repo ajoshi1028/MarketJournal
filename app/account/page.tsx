@@ -41,10 +41,10 @@ type DailyPnlMap = Record<string, number>;
 
 const COLORS = [
   "#818cf8",
-  "#22c55e",
-  "#ef4444",
-  "#f59e0b",
-  "#14b8a6",
+  "#34d399",
+  "#f87171",
+  "#fbbf24",
+  "#2dd4bf",
   "#a78bfa",
   "#64748b",
 ];
