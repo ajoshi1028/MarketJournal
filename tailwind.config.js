@@ -26,21 +26,23 @@ module.exports = {
       },
       fontFamily: {
         sans: [
-          "Inter",
+          "var(--font-geist)",
           "system-ui",
           "-apple-system",
-          "BlinkMacSystemFont",
           "sans-serif",
         ],
-        mono: ["JetBrains Mono", "Fira Code", "monospace"],
+        mono: [
+          "var(--font-geist-mono)",
+          "ui-monospace",
+          "monospace",
+        ],
       },
       borderRadius: {
-        xl: "0.875rem",
+        xl: "0.75rem",
         "2xl": "1rem",
       },
       boxShadow: {
-        glow: "0 0 20px rgba(99, 102, 241, 0.15)",
-        card: "0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2)",
+        card: "0 1px 2px rgba(0, 0, 0, 0.25)",
       },
     },
   },

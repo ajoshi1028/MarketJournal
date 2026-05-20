@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
-
 @layer base {
   * {
     @apply border-surface-300;
@@ -11,10 +9,12 @@
 
   body {
     @apply bg-surface text-gray-100 font-sans antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   ::selection {
-    @apply bg-accent/30 text-white;
+    @apply bg-accent/25 text-white;
   }
 
   input[type="number"]::-webkit-inner-spin-button,
@@ -26,7 +26,6 @@
     -moz-appearance: textfield;
   }
 
-  /* Dark theme for date/time picker icons and dropdowns */
   input[type="date"]::-webkit-calendar-picker-indicator,
   input[type="time"]::-webkit-calendar-picker-indicator {
     filter: invert(1);
@@ -50,7 +49,6 @@
     color: #6b7280;
   }
 
-  /* Style select dropdowns */
   select {
     color-scheme: dark;
   }
@@ -66,26 +64,26 @@
   }
 
   .input-field {
-    @apply w-full bg-surface-200 border border-surface-400 rounded-lg px-3.5 py-2.5
+    @apply w-full bg-surface-200 border border-surface-400 rounded-lg px-3.5 py-2.5 text-sm
            text-gray-100 placeholder-gray-500
-           focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent
+           focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent
            transition-colors;
   }
 
   .btn-primary {
     @apply bg-accent hover:bg-accent-dark active:bg-indigo-700
-           text-white font-medium px-5 py-2.5 rounded-lg
-           transition-all duration-150
-           focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-surface;
+           text-white text-sm font-medium px-5 py-2.5 rounded-lg
+           transition-colors duration-150
+           focus:outline-none focus:ring-2 focus:ring-accent/40 focus:ring-offset-2 focus:ring-offset-surface;
   }
 
   .btn-ghost {
     @apply text-gray-400 hover:text-gray-200 hover:bg-surface-300
-           px-3 py-2 rounded-lg transition-colors;
+           px-3 py-2 rounded-lg text-sm transition-colors;
   }
 
   .btn-danger {
-    @apply bg-red-600/20 text-red-400 hover:bg-red-600/30 hover:text-red-300
+    @apply bg-red-600/15 text-red-400 hover:bg-red-600/25 hover:text-red-300
            px-3 py-1.5 rounded-lg text-sm font-medium transition-colors;
   }
 
@@ -94,11 +92,11 @@
   }
 
   .label {
-    @apply block text-sm font-medium text-gray-400 mb-1.5;
+    @apply block text-sm text-gray-400 mb-1.5;
   }
 
   .nav-link {
-    @apply text-gray-400 hover:text-gray-100 font-medium px-3 py-2 rounded-lg
+    @apply text-gray-400 hover:text-gray-100 text-sm font-medium px-3 py-1.5 rounded-md
            transition-colors hover:bg-surface-200;
   }
 }
