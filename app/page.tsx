@@ -107,11 +107,10 @@ export default function HomePage() {
         {/* Stats bar */}
         <section className="border-y border-surface-300 bg-surface-50">
           <div className="max-w-5xl mx-auto px-6 py-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div className="grid grid-cols-3 gap-8 text-center">
               {[
-                { val: "AI", label: "Chart Analysis" },
+                { val: "AI", label: "Analysis & Coaching" },
                 { val: "10+", label: "Analytics Metrics" },
-                { val: "PDF", label: "Trade Reports" },
                 { val: "Free", label: "To Get Started" },
               ].map((s) => (
                 <div key={s.label}>
@@ -124,7 +123,7 @@ export default function HomePage() {
         </section>
 
         {/* Features */}
-        <section className="max-w-5xl mx-auto px-6 py-20">
+        <section className="max-w-3xl mx-auto px-6 py-20">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-semibold text-white mb-3">
               Everything you need to trade better
@@ -133,17 +132,16 @@ export default function HomePage() {
               Built by traders, for traders. Every feature designed to help you find and keep your edge.
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="space-y-6">
             {features.map((f) => (
-              <div
-                key={f.title}
-                className="card p-5 hover:border-surface-400 transition-colors"
-              >
-                <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center mb-3 text-accent-light">
+              <div key={f.title} className="flex gap-4 items-start">
+                <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0 text-accent-light mt-0.5">
                   {f.icon}
                 </div>
-                <h3 className="text-sm font-semibold text-white mb-1.5">{f.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{f.desc}</p>
+                <div>
+                  <h3 className="text-sm font-semibold text-white mb-1">{f.title}</h3>
+                  <p className="text-gray-500 text-sm leading-relaxed">{f.desc}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -201,10 +199,7 @@ export default function HomePage() {
               </Link>
             </div>
             {/* Pro */}
-            <div className="card p-6 border-accent/30 relative">
-              <div className="absolute top-3 right-3 bg-accent/15 text-accent-light text-xs font-medium px-2 py-0.5 rounded">
-                Popular
-              </div>
+            <div className="card p-6 border-accent/30">
               <h3 className="text-sm font-semibold text-white mb-0.5">Pro</h3>
               <p className="text-gray-500 text-xs mb-4">For serious traders</p>
               <p className="text-3xl font-semibold text-white mb-5">
@@ -240,7 +235,7 @@ export default function HomePage() {
         <section className="border-t border-surface-300">
           <div className="max-w-5xl mx-auto px-6 py-20 text-center">
             <h2 className="text-2xl md:text-3xl font-semibold text-white mb-3">
-              Ready to find your edge?
+              Join now
             </h2>
             <p className="text-gray-400 mb-8 max-w-md mx-auto">
               Join traders who use MarketJournal to track, analyze, and improve their trading performance.
