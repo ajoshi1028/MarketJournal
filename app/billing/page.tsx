@@ -124,12 +124,7 @@ function BillingContent() {
         </div>
 
         {/* Pro */}
-        <div className={`card p-6 relative ${isPro ? "border-accent/40 shadow-glow" : ""}`}>
-          {!isPro && (
-            <div className="absolute -top-3 left-6 bg-accent px-3 py-1 rounded-full text-xs font-bold text-white">
-              POPULAR
-            </div>
-          )}
+        <div className={`card p-6 relative ${isPro ? "border-accent/40" : ""}`}>
           {isPro && (
             <div className="absolute -top-3 left-6 bg-profit px-3 py-1 rounded-full text-xs font-bold text-white">
               ACTIVE
