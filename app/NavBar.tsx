@@ -28,7 +28,7 @@ export default function NavBar() {
         <div className="flex items-center gap-6">
           <Link
             href="/"
-            className="text-lg font-bold tracking-tight text-white shrink-0"
+            className="text-base font-semibold tracking-tight text-white shrink-0"
           >
             <span className="text-accent-light">M</span>arket
             <span className="text-accent-light">J</span>ournal

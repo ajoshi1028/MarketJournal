@@ -1,6 +1,10 @@
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Geist, Geist_Mono } from "next/font/google";
 import NavBar from "./NavBar";
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata = {
   title: "Market Journal",
@@ -58,7 +62,7 @@ export default function RootLayout({
         },
       }}
     >
-      <html lang="en">
+      <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
         <body>
           <NavBar />
           <div className="min-h-[calc(100vh-57px)]">{children}</div>
