@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  ReferenceLine,
 } from "recharts";
 
 type Analytics = {
@@ -148,6 +149,7 @@ export default function AnalyticsPage() {
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#4b5563" }} axisLine={false} tickLine={false} />
               <YAxis tickFormatter={(v) => `$${v}`} width={60} tick={{ fontSize: 11, fill: "#4b5563" }} axisLine={false} tickLine={false} />
               <Tooltip formatter={(v: number) => [fmtUSD(v), "P&L"]} {...tooltipStyle} cursor={false} />
+              <ReferenceLine y={0} stroke="#2a2a38" strokeWidth={1} />
               <Bar dataKey="pnl" radius={[2, 2, 0, 0]} maxBarSize={48}>
                 {data.pnlByWeekday.map((d, i) => (
                   <Cell key={i} fill={d.pnl >= 0 ? "#34d399" : "#f87171"} opacity={0.85} />
@@ -169,6 +171,7 @@ export default function AnalyticsPage() {
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#4b5563" }} axisLine={false} tickLine={false} />
               <YAxis tickFormatter={(v) => `$${v}`} width={60} tick={{ fontSize: 11, fill: "#4b5563" }} axisLine={false} tickLine={false} />
               <Tooltip formatter={(v: number) => [fmtUSD(v), "P&L"]} {...tooltipStyle} cursor={false} />
+              <ReferenceLine y={0} stroke="#2a2a38" strokeWidth={1} />
               <Bar dataKey="pnl" radius={[2, 2, 0, 0]} maxBarSize={64}>
                 {data.monthlyPerformance.map((d, i) => (
                   <Cell key={i} fill={d.pnl >= 0 ? "#34d399" : "#f87171"} opacity={0.85} />
