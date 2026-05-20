@@ -29,6 +29,7 @@ export async function GET() {
       totalBuyQty: true,
       totalSellQty: true,
       tags: true,
+      optionType: true,
     },
   });
 
@@ -70,6 +71,25 @@ export async function GET() {
     tickerMap.set(t.ticker, entry);
   }
   const byTicker = Array.from(tickerMap.entries())
+    .map(([name, data]) => ({
+      name,
+      winRate: data.total > 0 ? (data.wins / data.total) * 100 : 0,
+      trades: data.total,
+      pnl: data.pnl,
+    }))
+    .sort((a, b) => b.trades - a.trades);
+
+  // Performance by option type (Call vs Put)
+  const optionTypeMap = new Map<string, { wins: number; total: number; pnl: number }>();
+  for (const t of closedTrades) {
+    const ot = t.optionType || "Unknown";
+    const entry = optionTypeMap.get(ot) || { wins: 0, total: 0, pnl: 0 };
+    entry.total++;
+    entry.pnl += t.realizedPnl ?? 0;
+    if (t.outcome === "PROFIT") entry.wins++;
+    optionTypeMap.set(ot, entry);
+  }
+  const byOptionType = Array.from(optionTypeMap.entries())
     .map(([name, data]) => ({
       name,
       winRate: data.total > 0 ? (data.wins / data.total) * 100 : 0,
@@ -206,6 +226,7 @@ export async function GET() {
     },
     byStrategy,
     byTicker,
+    byOptionType,
     pnlByWeekday,
     monthlyPerformance,
   });

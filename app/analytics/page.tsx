@@ -33,6 +33,7 @@ type Analytics = {
   streaks: { current: number; maxWin: number; maxLoss: number };
   byStrategy: { name: string; winRate: number; trades: number; pnl: number }[];
   byTicker: { name: string; winRate: number; trades: number; pnl: number }[];
+  byOptionType: { name: string; winRate: number; trades: number; pnl: number }[];
   pnlByWeekday: { name: string; pnl: number; trades: number }[];
   monthlyPerformance: { month: string; pnl: number }[];
 };
@@ -182,33 +183,33 @@ export default function AnalyticsPage() {
         </div>
       </section>
 
-      {/* By Strategy table */}
+      {/* Call vs Put */}
       <section className="card p-5">
         <h3 className="text-sm font-medium text-white mb-4">
-          Performance by Strategy
+          Call vs Put Performance
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-surface-300 text-gray-500">
-                <th className="text-left py-2 pr-4">Strategy</th>
+                <th className="text-left py-2 pr-4">Type</th>
                 <th className="text-right py-2 px-4">Trades</th>
                 <th className="text-right py-2 px-4">Win Rate</th>
                 <th className="text-right py-2 pl-4">P&L</th>
               </tr>
             </thead>
             <tbody>
-              {data.byStrategy.map((s) => (
-                <tr key={s.name} className="border-b border-surface-200">
-                  <td className="py-2.5 pr-4 text-gray-200">{s.name}</td>
-                  <td className="py-2.5 px-4 text-right text-gray-400">{s.trades}</td>
+              {data.byOptionType.map((ot) => (
+                <tr key={ot.name} className="border-b border-surface-200">
+                  <td className="py-2.5 pr-4 text-gray-200">{ot.name}</td>
+                  <td className="py-2.5 px-4 text-right text-gray-400">{ot.trades}</td>
                   <td className="py-2.5 px-4 text-right">
-                    <span className={s.winRate >= 50 ? "text-profit" : "text-loss"}>
-                      {s.winRate.toFixed(1)}%
+                    <span className={ot.winRate >= 50 ? "text-profit" : "text-loss"}>
+                      {ot.winRate.toFixed(1)}%
                     </span>
                   </td>
-                  <td className={`py-2.5 pl-4 text-right font-mono ${s.pnl >= 0 ? "text-profit" : "text-loss"}`}>
-                    {fmtUSD(s.pnl)}
+                  <td className={`py-2.5 pl-4 text-right font-mono ${ot.pnl >= 0 ? "text-profit" : "text-loss"}`}>
+                    {fmtUSD(ot.pnl)}
                   </td>
                 </tr>
               ))}
