@@ -57,6 +57,8 @@ export default function TrackPage() {
   const [tickerFilter, setTickerFilter] = useState("ALL");
   const [strategyFilter, setStrategyFilter] = useState("ALL");
   const [sortKey, setSortKey] = useState<SortKey>("DATE_DESC");
+  const [showClearModal, setShowClearModal] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     if (!isLoaded || !user) return;
@@ -125,6 +127,23 @@ export default function TrackPage() {
     return copy;
   }, [filtered, sortKey]);
 
+  async function clearAllTrades() {
+    setClearing(true);
+    try {
+      const res = await fetch("/api/trades?all=true", { method: "DELETE" });
+      if (res.ok) {
+        setTrades([]);
+        setShowClearModal(false);
+      } else {
+        alert("Failed to clear trades");
+      }
+    } catch {
+      alert("Network error");
+    } finally {
+      setClearing(false);
+    }
+  }
+
   function setAiResult(id: string, text: string) {
     setTrades((prev) =>
       prev.map((t) => (t.id === id ? { ...t, aiAnalysis: text } : t)),
@@ -140,11 +159,21 @@ export default function TrackPage() {
 
   return (
     <main className="max-w-7xl mx-auto px-6 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white mb-1">Track</h1>
-        <p className="text-gray-500">
-          Filter, sort, and analyze your trades with AI.
-        </p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-1">Track</h1>
+          <p className="text-gray-500">
+            Filter, sort, and analyze your trades with AI.
+          </p>
+        </div>
+        {trades.length > 0 && (
+          <button
+            onClick={() => setShowClearModal(true)}
+            className="btn-danger text-xs px-3 py-1.5 shrink-0 mt-1"
+          >
+            Clear All Trades
+          </button>
+        )}
       </div>
 
       {loadError && (
@@ -254,6 +283,34 @@ export default function TrackPage() {
           ))
         )}
       </div>
+
+      {/* Clear All Confirmation Modal */}
+      {showClearModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="card p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold text-white mb-2">Clear all trades?</h3>
+            <p className="text-sm text-gray-400 mb-5">
+              This will permanently delete <span className="text-white font-medium">{trades.length} trade{trades.length !== 1 && "s"}</span>. This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowClearModal(false)}
+                className="btn-ghost"
+                disabled={clearing}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={clearAllTrades}
+                disabled={clearing}
+                className="bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {clearing ? "Deleting..." : "Delete All"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

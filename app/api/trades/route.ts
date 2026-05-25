@@ -219,6 +219,13 @@ export async function DELETE(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const tradeId = searchParams.get("id");
+  const clearAll = searchParams.get("all");
+
+  if (clearAll === "true") {
+    const result = await prisma.tradeEntry.deleteMany({ where: { userId } });
+    return NextResponse.json({ message: "Deleted", count: result.count });
+  }
+
   if (!tradeId)
     return NextResponse.json({ error: "Trade ID required" }, { status: 400 });
 
