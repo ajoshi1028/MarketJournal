@@ -1,6 +1,7 @@
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import NavBar from "./NavBar";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
@@ -66,6 +67,7 @@ export default function RootLayout({
         <body>
           <NavBar />
           <div className="min-h-[calc(100vh-57px)]">{children}</div>
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>
