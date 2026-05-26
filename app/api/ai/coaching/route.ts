@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
 }
 
 // POST — generate a new coaching report for today
-export async function POST() {
+export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -60,6 +60,17 @@ export async function POST() {
   if (!success)
     return NextResponse.json({ error: "Rate limit exceeded. Try again later." }, { status: 429 });
 
+  // Parse optional user question
+  let userQuestion = "";
+  try {
+    const body = await req.json();
+    if (body.question && typeof body.question === "string") {
+      userQuestion = body.question.slice(0, 500);
+    }
+  } catch {
+    // No body or invalid JSON — that's fine
+  }
+
   const trades = await prisma.tradeEntry.findMany({
     where: { userId },
     orderBy: { entryDate: "desc" },
@@ -68,6 +79,8 @@ export async function POST() {
       ticker: true,
       strategy: true,
       positionType: true,
+      optionType: true,
+      strike: true,
       entryDate: true,
       sellDate: true,
       realizedPnl: true,
@@ -143,18 +156,57 @@ export async function POST() {
     weekdayPnl[d.getDay()] += t.realizedPnl ?? 0;
   }
 
-  const recentTrades = closedTrades.slice(0, 20).map((t) => ({
-    ticker: t.ticker,
-    strategy: t.strategy,
-    position: t.positionType,
-    pnl: t.realizedPnl,
-    outcome: t.outcome,
-    notes: t.notes?.slice(0, 100),
-  }));
+  // Today's trades
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const toStr = (d: Date | string) => (d instanceof Date ? d.toISOString() : String(d)).slice(0, 10);
 
-  const prompt = `You are an expert options trading coach. Analyze this trader's history and give SPECIFIC, ACTIONABLE coaching.
+  const todayTrades = closedTrades.filter((t) => {
+    return toStr(t.sellDate ?? t.entryDate) === todayStr;
+  });
 
-STATS:
+  // This week's trades (Mon-Fri of current week)
+  const dayOfWeek = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
+  const mondayStr = monday.toISOString().slice(0, 10);
+  const weekTrades = closedTrades.filter((t) => {
+    const d = toStr(t.sellDate ?? t.entryDate);
+    return d >= mondayStr && d <= todayStr;
+  });
+
+  const formatTradeList = (list: typeof closedTrades) =>
+    list.map((t) => ({
+      ticker: t.ticker,
+      option: t.optionType ? `${t.strike} ${t.optionType}` : null,
+      strategy: t.strategy,
+      position: t.positionType,
+      pnl: t.realizedPnl,
+      outcome: t.outcome,
+      date: toStr(t.sellDate ?? t.entryDate),
+      notes: t.notes?.slice(0, 100),
+    }));
+
+  const todaySection = todayTrades.length > 0
+    ? `\nTODAY'S TRADES (${todayStr}):\n${JSON.stringify(formatTradeList(todayTrades), null, 0)}\nToday's P&L: $${todayTrades.reduce((s, t) => s + (t.realizedPnl ?? 0), 0).toFixed(2)}, ${todayTrades.filter(t => t.outcome === "PROFIT").length}W / ${todayTrades.filter(t => t.outcome === "LOSS").length}L`
+    : `\nTODAY'S TRADES: No trades closed today.`;
+
+  const weekPnl = weekTrades.reduce((s, t) => s + (t.realizedPnl ?? 0), 0);
+  const weekWins = weekTrades.filter(t => t.outcome === "PROFIT").length;
+  const weekLosses = weekTrades.filter(t => t.outcome === "LOSS").length;
+  const weekSection = weekTrades.length > 0
+    ? `\nTHIS WEEK'S TRADES (${mondayStr} to ${todayStr}):\n${JSON.stringify(formatTradeList(weekTrades), null, 0)}\nWeek P&L: $${weekPnl.toFixed(2)}, ${weekWins}W / ${weekLosses}L, Win Rate: ${weekTrades.length > 0 ? ((weekWins / weekTrades.length) * 100).toFixed(0) : 0}%`
+    : `\nTHIS WEEK'S TRADES: No trades closed this week.`;
+
+  const userQuestionSection = userQuestion
+    ? `\n\nTRADER'S QUESTION:\nThe trader specifically wants to know: "${userQuestion}"\nPlease address this question in a dedicated "YOUR QUESTION" section at the end of the report.`
+    : "";
+
+  const prompt = `You are an expert options trading coach. Analyze this trader's performance at three levels: today, this week, and overall. Give SPECIFIC, ACTIONABLE coaching based on their actual data.
+${todaySection}
+${weekSection}
+
+OVERALL STATS:
 - Total closed trades: ${closedTrades.length}
 - Win rate: ${winRate}%
 - Average win: $${avgWin}
@@ -180,18 +232,18 @@ ${Array.from(tickers.entries())
 
 P&L BY WEEKDAY:
 ${weekdays.map((d, i) => `  ${d}: $${weekdayPnl[i].toFixed(2)}`).join("\n")}
-
-RECENT 20 TRADES:
-${JSON.stringify(recentTrades, null, 0)}
+${userQuestionSection}
 
 Provide your coaching in these sections:
-1. STRENGTHS (2-3 specific things they're doing well)
-2. WEAKNESSES (2-3 specific patterns hurting them)
-3. ACTION ITEMS (3-4 concrete steps to improve, referencing their actual data)
-4. RISK MANAGEMENT (specific advice based on their win/loss sizes)
-5. NEXT WEEK FOCUS (one specific thing to focus on)
+1. TODAY'S REVIEW (analyze today's trades specifically — what went well, what didn't. If no trades today, briefly note that)
+2. WEEKLY PERFORMANCE (analyze this week's trades as a group — patterns, wins/losses, momentum)
+3. STRENGTHS (2-3 specific things they're doing well overall)
+4. WEAKNESSES (2-3 specific patterns hurting them overall)
+5. ACTION ITEMS (3-4 concrete steps to improve, referencing their actual data)
+6. RISK MANAGEMENT (specific advice based on their win/loss sizes)
+${userQuestion ? "7. YOUR QUESTION (directly answer the trader's specific question using their data)" : ""}
 
-Be direct, specific, and reference actual numbers. No generic advice. ~400 words.`;
+Be direct, specific, and reference actual numbers from their trades. No generic advice. ~500 words.`;
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 25000, maxRetries: 1 });
   const completion = await openai.chat.completions.create({
@@ -203,7 +255,6 @@ Be direct, specific, and reference actual numbers. No generic advice. ~400 words
   const coaching = completion.choices?.[0]?.message?.content?.trim() || "";
 
   // Save to database
-  const today = new Date();
   const dateOnly = new Date(
     Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()),
   );

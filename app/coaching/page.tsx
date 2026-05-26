@@ -26,6 +26,7 @@ export default function CoachingPage() {
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
   const [calYear, setCalYear] = useState(new Date().getFullYear());
   const [usage, setUsage] = useState<UsageInfo>(null);
+  const [question, setQuestion] = useState("");
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -51,7 +52,13 @@ export default function CoachingPage() {
     setCoaching(null);
     setSelectedDate(null);
     try {
-      const res = await fetch("/api/ai/coaching", { method: "POST" });
+      const body: { question?: string } = {};
+      if (question.trim()) body.question = question.trim();
+      const res = await fetch("/api/ai/coaching", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
       const data = await res.json();
       if (!res.ok) {
         if (data.upgradeRequired) {
@@ -64,6 +71,7 @@ export default function CoachingPage() {
       if (data.coaching) {
         setCoaching(data.coaching);
         if (data.date) setSelectedDate(data.date.slice(0, 10));
+        setQuestion("");
         fetchHistory();
         fetchUsage();
       }
@@ -110,17 +118,24 @@ export default function CoachingPage() {
   }
 
   function formatCoaching(text: string) {
-    const sections = text.split(/(?=(?:STRENGTHS|WEAKNESSES|ACTION ITEMS|RISK MANAGEMENT|NEXT WEEK FOCUS))/);
+    const sectionNames = "TODAY'S REVIEW|WEEKLY PERFORMANCE|STRENGTHS|WEAKNESSES|ACTION ITEMS|RISK MANAGEMENT|NEXT WEEK FOCUS|YOUR QUESTION";
+    const sections = text.split(new RegExp(`(?=(?:${sectionNames}))`));
+    const colorMap: Record<string, string> = {
+      "TODAY'S REVIEW": "text-cyan-400",
+      "WEEKLY PERFORMANCE": "text-blue-400",
+      "STRENGTHS": "text-profit",
+      "WEAKNESSES": "text-loss",
+      "ACTION ITEMS": "text-accent-light",
+      "RISK MANAGEMENT": "text-amber-400",
+      "NEXT WEEK FOCUS": "text-cyan-400",
+      "YOUR QUESTION": "text-purple-400",
+    };
     return sections.map((section, i) => {
-      const match = section.match(/^(STRENGTHS|WEAKNESSES|ACTION ITEMS|RISK MANAGEMENT|NEXT WEEK FOCUS)/);
+      const match = section.match(new RegExp(`^(${sectionNames})`));
       if (match) {
         const header = match[1];
         const body = cleanMarkdown(section.slice(header.length));
-        const color = header === "STRENGTHS" ? "text-profit"
-          : header === "WEAKNESSES" ? "text-loss"
-          : header === "ACTION ITEMS" ? "text-accent-light"
-          : header === "RISK MANAGEMENT" ? "text-amber-400"
-          : "text-cyan-400";
+        const color = colorMap[header] || "text-gray-300";
         return (
           <div key={i} className="mb-5">
             <h3 className={`text-sm font-bold ${color} mb-2`}>{header}</h3>
@@ -183,13 +198,23 @@ export default function CoachingPage() {
             </div>
           </div>
 
-          <button
-            onClick={handleGenerate}
-            disabled={loading || (usage !== null && !usage.isPro && usage.coaching.used >= usage.coaching.limit)}
-            className="btn-primary w-full disabled:opacity-50"
-          >
-            {loading ? "Analyzing..." : "Generate Today's Coaching"}
-          </button>
+          <div className="card p-3 space-y-2">
+            <textarea
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Ask your coach anything... (optional)"
+              maxLength={500}
+              rows={2}
+              className="input-field text-xs resize-none"
+            />
+            <button
+              onClick={handleGenerate}
+              disabled={loading || (usage !== null && !usage.isPro && usage.coaching.used >= usage.coaching.limit)}
+              className="btn-primary w-full disabled:opacity-50"
+            >
+              {loading ? "Analyzing..." : "Generate Today's Coaching"}
+            </button>
+          </div>
 
           {usage && !usage.isPro && (
             <div className="card p-3 text-center space-y-1.5">
