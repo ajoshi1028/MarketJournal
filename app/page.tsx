@@ -223,23 +223,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section>
-          <div className="max-w-6xl mx-auto px-6 py-24">
-            <div className="max-w-2xl">
-              <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight mb-5">
-                Start journaling today.
-              </h2>
-              <p className="text-gray-400 text-lg mb-8">
-                Join traders who use MarketJournal to track, analyze, and improve their trading.
-              </p>
-              <Link href="/sign-up" className="bg-white text-surface font-semibold px-8 py-3.5 rounded-lg text-sm hover:bg-gray-100 transition-colors inline-block">
-                Get Started Free
-              </Link>
-            </div>
-          </div>
-        </section>
-
         {/* Footer */}
         <footer className="border-t border-surface-300 py-8">
           <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
