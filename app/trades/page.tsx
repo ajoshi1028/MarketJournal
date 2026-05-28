@@ -250,8 +250,9 @@ export default function TradesPage() {
           <form onSubmit={handleSubmit} className="card p-6 space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="label">Ticker *</label>
+                <label htmlFor="trade-ticker" className="label">Ticker *</label>
                 <input
+                  id="trade-ticker"
                   type="text"
                   value={form.ticker}
                   onChange={(e) => setField("ticker", e.target.value)}
@@ -261,8 +262,9 @@ export default function TradesPage() {
                 />
               </div>
               <div>
-                <label className="label">Strategy</label>
+                <label htmlFor="trade-strategy" className="label">Strategy</label>
                 <input
+                  id="trade-strategy"
                   type="text"
                   value={form.strategy}
                   onChange={(e) => setField("strategy", e.target.value)}
@@ -271,8 +273,9 @@ export default function TradesPage() {
                 />
               </div>
               <div>
-                <label className="label">Position *</label>
+                <label htmlFor="trade-position" className="label">Position *</label>
                 <select
+                  id="trade-position"
                   value={form.positionType}
                   onChange={(e) => setField("positionType", e.target.value)}
                   className="input-field"
@@ -284,8 +287,9 @@ export default function TradesPage() {
                 </select>
               </div>
               <div>
-                <label className="label">Entry Date *</label>
+                <label htmlFor="trade-entry-date" className="label">Entry Date *</label>
                 <input
+                  id="trade-entry-date"
                   type="date"
                   value={form.entryDate}
                   onChange={(e) => setField("entryDate", e.target.value)}
@@ -294,8 +298,9 @@ export default function TradesPage() {
                 />
               </div>
               <div>
-                <label className="label">Strike Price</label>
+                <label htmlFor="trade-strike" className="label">Strike Price</label>
                 <input
+                  id="trade-strike"
                   type="number"
                   step="0.5"
                   min={0}
@@ -306,8 +311,9 @@ export default function TradesPage() {
                 />
               </div>
               <div>
-                <label className="label">Expiry</label>
+                <label htmlFor="trade-expiry" className="label">Expiry</label>
                 <input
+                  id="trade-expiry"
                   type="date"
                   value={form.expiry}
                   onChange={(e) => setField("expiry", e.target.value)}
@@ -315,8 +321,9 @@ export default function TradesPage() {
                 />
               </div>
               <div>
-                <label className="label">Entry Time</label>
+                <label htmlFor="trade-entry-time" className="label">Entry Time</label>
                 <input
+                  id="trade-entry-time"
                   type="time"
                   value={form.entryTime}
                   onChange={(e) => setField("entryTime", e.target.value)}
@@ -324,8 +331,9 @@ export default function TradesPage() {
                 />
               </div>
               <div>
-                <label className="label">Sell Date</label>
+                <label htmlFor="trade-sell-date" className="label">Sell Date</label>
                 <input
+                  id="trade-sell-date"
                   type="date"
                   value={form.sellDate}
                   onChange={(e) => setField("sellDate", e.target.value)}
@@ -333,8 +341,9 @@ export default function TradesPage() {
                 />
               </div>
               <div>
-                <label className="label">Exit Time</label>
+                <label htmlFor="trade-exit-time" className="label">Exit Time</label>
                 <input
+                  id="trade-exit-time"
                   type="time"
                   value={form.exitTime}
                   onChange={(e) => setField("exitTime", e.target.value)}
@@ -364,8 +373,9 @@ export default function TradesPage() {
             />
 
             <div>
-              <label className="label">Notes</label>
+              <label htmlFor="trade-notes" className="label">Notes</label>
               <textarea
+                id="trade-notes"
                 rows={3}
                 value={form.notes}
                 onChange={(e) => setField("notes", e.target.value)}
@@ -375,8 +385,9 @@ export default function TradesPage() {
             </div>
 
             <div>
-              <label className="label">Chart Image (optional)</label>
+              <label htmlFor="trade-chart" className="label">Chart Image (optional)</label>
               <input
+                id="trade-chart"
                 type="file"
                 accept="image/*"
                 onChange={(e) => setChartFile(e.target.files?.[0] ?? null)}
@@ -467,6 +478,7 @@ function FillsSection({
               value={f.qty}
               onChange={(e) => onUpdate(side, i, "qty", e.target.value)}
               className="input-field"
+              aria-label={`${label} row ${i + 1} contracts`}
             />
             <input
               type="number"
@@ -476,11 +488,13 @@ function FillsSection({
               value={f.price}
               onChange={(e) => onUpdate(side, i, "price", e.target.value)}
               className="input-field"
+              aria-label={`${label} row ${i + 1} price`}
             />
             <button
               type="button"
               onClick={() => onRemove(side, i)}
               className="btn-ghost text-gray-500 hover:text-red-400 px-2"
+              aria-label={`Remove ${label.toLowerCase()} row ${i + 1}`}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

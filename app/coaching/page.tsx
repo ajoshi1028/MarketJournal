@@ -159,9 +159,9 @@ export default function CoachingPage() {
         <div className="space-y-4">
           <div className="card p-4">
             <div className="flex items-center justify-between mb-3">
-              <button onClick={prevMonth} className="btn-ghost text-xs px-2">&larr;</button>
+              <button onClick={prevMonth} className="btn-ghost text-xs px-2" aria-label="Previous month">&larr;</button>
               <span className="text-sm font-semibold text-white">{monthName}</span>
-              <button onClick={nextMonth} className="btn-ghost text-xs px-2">&rarr;</button>
+              <button onClick={nextMonth} className="btn-ghost text-xs px-2" aria-label="Next month">&rarr;</button>
             </div>
             <div className="grid grid-cols-7 gap-0.5 mb-1">
               {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => (
@@ -199,7 +199,9 @@ export default function CoachingPage() {
           </div>
 
           <div className="card p-3 space-y-2">
+            <label htmlFor="coaching-question" className="sr-only">Ask your coach a question</label>
             <textarea
+              id="coaching-question"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Ask your coach anything... (optional)"

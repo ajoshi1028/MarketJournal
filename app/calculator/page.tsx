@@ -55,8 +55,9 @@ export default function CalculatorPage() {
       <div className="card p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label className="label">Number of Contracts</label>
+            <label htmlFor="calc-contracts" className="label">Number of Contracts</label>
             <input
+              id="calc-contracts"
               type="number"
               min={0}
               step={1}
@@ -67,8 +68,9 @@ export default function CalculatorPage() {
             />
           </div>
           <div>
-            <label className="label">Entry Price (per contract)</label>
+            <label htmlFor="calc-entry" className="label">Entry Price (per contract)</label>
             <input
+              id="calc-entry"
               type="number"
               min={0}
               step="0.01"
@@ -82,8 +84,9 @@ export default function CalculatorPage() {
             </p>
           </div>
           <div>
-            <label className="label">Take Profit (%)</label>
+            <label htmlFor="calc-tp" className="label">Take Profit (%)</label>
             <input
+              id="calc-tp"
               type="number"
               min={0}
               step="0.1"
@@ -94,8 +97,9 @@ export default function CalculatorPage() {
             />
           </div>
           <div>
-            <label className="label">Stop Loss (%)</label>
+            <label htmlFor="calc-sl" className="label">Stop Loss (%)</label>
             <input
+              id="calc-sl"
               type="number"
               min={0}
               step="0.1"

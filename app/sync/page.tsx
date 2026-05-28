@@ -107,8 +107,9 @@ export default function SyncPage() {
           className="flex flex-col sm:flex-row items-start sm:items-end gap-4"
         >
           <div className="w-full sm:w-auto">
-            <label className="label">Broker</label>
+            <label htmlFor="sync-broker" className="label">Broker</label>
             <select
+              id="sync-broker"
               value={broker}
               onChange={(e) => setBroker(e.target.value)}
               className="input-field"
@@ -121,8 +122,9 @@ export default function SyncPage() {
             </select>
           </div>
           <div className="flex-1 w-full">
-            <label className="label">CSV File</label>
+            <label htmlFor="sync-csv" className="label">CSV File</label>
             <input
+              id="sync-csv"
               type="file"
               accept=".csv,text/csv"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
