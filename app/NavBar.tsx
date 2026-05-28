@@ -72,7 +72,8 @@ export default function NavBar() {
             <button
               onClick={() => setOpen(!open)}
               className="lg:hidden p-2 text-gray-400 hover:text-white transition-colors"
-              aria-label="Toggle menu"
+              aria-label="Toggle navigation menu"
+              aria-expanded={open}
             >
               {open ? (
                 <svg

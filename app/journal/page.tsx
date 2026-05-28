@@ -131,9 +131,9 @@ export default function JournalPage() {
         <div className="space-y-4">
           <div className="card p-4">
             <div className="flex items-center justify-between mb-3">
-              <button onClick={prevMonth} className="btn-ghost text-xs px-2">&larr;</button>
+              <button onClick={prevMonth} className="btn-ghost text-xs px-2" aria-label="Previous month">&larr;</button>
               <span className="text-sm font-semibold text-white">{monthName}</span>
-              <button onClick={nextMonth} className="btn-ghost text-xs px-2">&rarr;</button>
+              <button onClick={nextMonth} className="btn-ghost text-xs px-2" aria-label="Next month">&rarr;</button>
             </div>
             <div className="grid grid-cols-7 gap-0.5 mb-1">
               {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => (
@@ -187,8 +187,8 @@ export default function JournalPage() {
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="label">Market Bias</label>
-                <div className="flex gap-2">
+                <label id="bias-label" className="label">Market Bias</label>
+                <div className="flex gap-2" role="group" aria-labelledby="bias-label">
                   {BIASES.map((b) => (
                     <button
                       key={b}
@@ -211,8 +211,9 @@ export default function JournalPage() {
               </div>
 
               <div>
-                <label className="label">Watchlist (comma separated)</label>
+                <label htmlFor="journal-watchlist" className="label">Watchlist (comma separated)</label>
                 <input
+                  id="journal-watchlist"
                   type="text"
                   value={watchlistInput}
                   onChange={(e) => setWatchlistInput(e.target.value)}
@@ -222,8 +223,9 @@ export default function JournalPage() {
               </div>
 
               <div>
-                <label className="label">Game Plan</label>
+                <label htmlFor="journal-gameplan" className="label">Game Plan</label>
                 <textarea
+                  id="journal-gameplan"
                   rows={4}
                   value={entry.premarketPlan || ""}
                   onChange={(e) => setField("premarketPlan", e.target.value)}
@@ -233,8 +235,9 @@ export default function JournalPage() {
               </div>
 
               <div>
-                <label className="label">Key Levels / Notes</label>
+                <label htmlFor="journal-keylevels" className="label">Key Levels / Notes</label>
                 <textarea
+                  id="journal-keylevels"
                   rows={3}
                   value={entry.keyLevels || ""}
                   onChange={(e) => setField("keyLevels", e.target.value)}
@@ -252,8 +255,9 @@ export default function JournalPage() {
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="label">What happened today?</label>
+                <label htmlFor="journal-postreview" className="label">What happened today?</label>
                 <textarea
+                  id="journal-postreview"
                   rows={4}
                   value={entry.postReview || ""}
                   onChange={(e) => setField("postReview", e.target.value)}
@@ -263,8 +267,9 @@ export default function JournalPage() {
               </div>
 
               <div>
-                <label className="label">Lessons Learned</label>
+                <label htmlFor="journal-lessons" className="label">Lessons Learned</label>
                 <textarea
+                  id="journal-lessons"
                   rows={3}
                   value={entry.lessonsLearned || ""}
                   onChange={(e) => setField("lessonsLearned", e.target.value)}
@@ -283,12 +288,14 @@ export default function JournalPage() {
 
             <div className="grid sm:grid-cols-3 gap-4">
               <div>
-                <label className="label">Mood (1-5)</label>
-                <div className="flex gap-1">
+                <label id="mood-label" className="label">Mood (1-5)</label>
+                <div className="flex gap-1" role="group" aria-labelledby="mood-label">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
                       key={n}
                       onClick={() => setField("mood", n)}
+                      aria-label={`Mood ${n}`}
+                      aria-pressed={entry.mood === n}
                       className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
                         entry.mood === n
                           ? "bg-accent text-white"
@@ -302,12 +309,14 @@ export default function JournalPage() {
               </div>
 
               <div>
-                <label className="label">Confidence (1-5)</label>
-                <div className="flex gap-1">
+                <label id="confidence-label" className="label">Confidence (1-5)</label>
+                <div className="flex gap-1" role="group" aria-labelledby="confidence-label">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
                       key={n}
                       onClick={() => setField("confidence", n)}
+                      aria-label={`Confidence ${n}`}
+                      aria-pressed={entry.confidence === n}
                       className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
                         entry.confidence === n
                           ? "bg-accent text-white"
@@ -321,12 +330,14 @@ export default function JournalPage() {
               </div>
 
               <div>
-                <label className="label">Day Grade</label>
-                <div className="flex gap-1">
+                <label id="grade-label" className="label">Day Grade</label>
+                <div className="flex gap-1" role="group" aria-labelledby="grade-label">
                   {GRADES.map((g) => (
                     <button
                       key={g}
                       onClick={() => setField("grade", g)}
+                      aria-label={`Grade ${g}`}
+                      aria-pressed={entry.grade === g}
                       className={`w-9 h-9 rounded-lg text-sm font-bold transition-colors ${
                         entry.grade === g
                           ? g <= "B"

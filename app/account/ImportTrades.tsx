@@ -79,8 +79,9 @@ export default function ImportTrades({
         className="flex flex-col md:flex-row items-start md:items-end gap-4"
       >
         <div className="flex-1">
-          <label className="label">Broker</label>
+          <label htmlFor="import-broker" className="label">Broker</label>
           <select
+            id="import-broker"
             value={broker}
             onChange={(e) => setBroker(e.target.value as Broker)}
             className="input-field"
@@ -94,8 +95,9 @@ export default function ImportTrades({
         </div>
 
         <div className="flex-1">
-          <label className="label">CSV File</label>
+          <label htmlFor="import-csv" className="label">CSV File</label>
           <input
+            id="import-csv"
             type="file"
             accept=".csv,text/csv"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}

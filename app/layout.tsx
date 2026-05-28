@@ -65,8 +65,9 @@ export default function RootLayout({
     >
       <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
         <body>
+          <a href="#main-content" className="skip-nav">Skip to main content</a>
           <NavBar />
-          <div className="min-h-[calc(100vh-57px)]">{children}</div>
+          <div id="main-content" className="min-h-[calc(100vh-57px)]">{children}</div>
           <Analytics />
         </body>
       </html>

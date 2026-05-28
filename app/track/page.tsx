@@ -186,8 +186,8 @@ export default function TrackPage() {
       <div className="card p-5 mb-6">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 items-end">
           <div>
-            <label className="label">Position Type</label>
-            <div className="flex gap-2">
+            <label id="filter-position" className="label">Position Type</label>
+            <div className="flex gap-2" role="group" aria-labelledby="filter-position">
               {(["ALL", "LONG", "SHORT"] as PosFilter[]).map((k) => (
                 <button
                   key={k}
@@ -205,8 +205,8 @@ export default function TrackPage() {
           </div>
 
           <div>
-            <label className="label">Outcome</label>
-            <div className="flex gap-2">
+            <label id="filter-outcome" className="label">Outcome</label>
+            <div className="flex gap-2" role="group" aria-labelledby="filter-outcome">
               {(["ANY", "PROFIT", "LOSS"] as OutcomeFilter[]).map((k) => (
                 <button
                   key={k}
@@ -224,8 +224,9 @@ export default function TrackPage() {
           </div>
 
           <div>
-            <label className="label">Ticker</label>
+            <label htmlFor="filter-ticker" className="label">Ticker</label>
             <select
+              id="filter-ticker"
               value={tickerFilter}
               onChange={(e) => setTickerFilter(e.target.value)}
               className="input-field"
@@ -240,8 +241,9 @@ export default function TrackPage() {
           </div>
 
           <div>
-            <label className="label">Strategy</label>
+            <label htmlFor="filter-strategy" className="label">Strategy</label>
             <select
+              id="filter-strategy"
               value={strategyFilter}
               onChange={(e) => setStrategyFilter(e.target.value)}
               className="input-field"
@@ -256,8 +258,9 @@ export default function TrackPage() {
           </div>
 
           <div>
-            <label className="label">Sort By</label>
+            <label htmlFor="filter-sort" className="label">Sort By</label>
             <select
+              id="filter-sort"
               value={sortKey}
               onChange={(e) => setSortKey(e.target.value as SortKey)}
               className="input-field"
@@ -286,9 +289,9 @@ export default function TrackPage() {
 
       {/* Clear All Confirmation Modal */}
       {showClearModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="clear-modal-title">
           <div className="card p-6 max-w-sm w-full mx-4">
-            <h3 className="text-lg font-semibold text-white mb-2">Clear all trades?</h3>
+            <h3 id="clear-modal-title" className="text-lg font-semibold text-white mb-2">Clear all trades?</h3>
             <p className="text-sm text-gray-400 mb-5">
               This will permanently delete <span className="text-white font-medium">{trades.length} trade{trades.length !== 1 && "s"}</span>. This action cannot be undone.
             </p>
@@ -370,6 +373,8 @@ function TradeRow({
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full text-left px-5 py-4 flex items-center gap-4"
+        aria-expanded={expanded}
+        aria-label={`${t.ticker} trade details${t.realizedPnl != null ? `, P&L ${fmtUSD(t.realizedPnl)}` : ""}`}
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
@@ -420,6 +425,7 @@ function TradeRow({
                 type="file"
                 accept="image/*"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                aria-label={`Upload chart image for ${t.ticker}`}
                 className="text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3
                            file:rounded-lg file:border-0 file:text-sm file:font-medium
                            file:bg-surface-300 file:text-gray-200 hover:file:bg-surface-400
