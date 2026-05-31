@@ -23,7 +23,7 @@ const PRO_FEATURES = [
 
 export default function BillingPage() {
   return (
-    <Suspense fallback={<main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 text-gray-400">Loading...</main>}>
+    <Suspense fallback={<main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 text-gray-400">Loading...</main>}>
       <BillingContent />
     </Suspense>
   );
@@ -79,7 +79,7 @@ function BillingContent() {
   }
 
   return (
-    <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">Billing</h1>
         <p className="text-gray-500 text-sm">
