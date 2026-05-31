@@ -141,12 +141,10 @@ export default function HomePage() {
 
           <div className="max-w-7xl mx-auto px-6 pt-20 pb-12 relative">
             <div className="max-w-4xl mx-auto text-center">
-              <h1 className="text-5xl sm:text-6xl md:text-[5.5rem] font-bold tracking-tight text-white leading-[1.05] mb-8">
-                Financial platform
+              <h1 className="text-5xl sm:text-6xl md:text-[5.5rem] font-bold tracking-tight leading-[1.05] mb-8">
+                <span className="text-white">Financial platform</span>
                 <br />
-                <span className="bg-gradient-to-r from-accent-light via-purple-400 to-profit bg-clip-text text-transparent">
-                  for smarter trading
-                </span>
+                <span className="text-accent-light">for smarter trading</span>
               </h1>
               <p className="text-lg md:text-xl text-gray-400 leading-relaxed mb-12 max-w-2xl mx-auto">
                 Log trades, analyze charts with AI, get personalized coaching,
