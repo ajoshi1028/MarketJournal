@@ -44,7 +44,7 @@ export default function CalculatorPage() {
   const hasInput = contracts && entry && tpPct && slPct;
 
   return (
-    <main className="max-w-3xl mx-auto px-6 py-8">
+    <main className="max-w-7xl mx-auto px-6 py-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-white mb-1">Risk Calculator</h1>
         <p className="text-gray-500">

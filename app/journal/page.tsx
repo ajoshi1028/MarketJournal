@@ -118,7 +118,7 @@ export default function JournalPage() {
   );
 
   return (
-    <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">Daily Journal</h1>
         <p className="text-gray-500 text-sm">

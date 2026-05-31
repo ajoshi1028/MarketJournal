@@ -175,7 +175,7 @@ export default function HomePage() {
           </div>
 
           {/* Dashboard preview — hero visual */}
-          <div className="max-w-5xl mx-auto px-6 pb-28 relative">
+          <div className="max-w-7xl mx-auto px-6 pb-28 relative">
             <div className="relative">
               <div className="absolute -inset-4 bg-gradient-to-b from-accent/[0.08] via-purple-500/[0.04] to-transparent rounded-3xl blur-2xl pointer-events-none" />
               <DashboardPreview />
@@ -186,7 +186,7 @@ export default function HomePage() {
         {/* Stats bar */}
         <section className="relative">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-surface-50/50 to-surface-50 pointer-events-none" />
-          <div className="max-w-6xl mx-auto px-6 py-20 relative">
+          <div className="max-w-7xl mx-auto px-6 py-20 relative">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
               {[
                 { value: "10+", label: "Performance metrics tracked" },
@@ -209,7 +209,7 @@ export default function HomePage() {
 
         {/* Bento grid — Core features */}
         <section className="bg-surface-50">
-          <div className="max-w-6xl mx-auto px-6 py-28">
+          <div className="max-w-7xl mx-auto px-6 py-28">
             <div className="max-w-2xl mb-20">
               <p className="text-accent-light text-sm font-medium tracking-wide uppercase mb-4">
                 Platform
@@ -315,7 +315,7 @@ export default function HomePage() {
             <div className="absolute top-[10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-amber-500/[0.03] blur-[100px]" />
             <div className="absolute bottom-[10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-accent/[0.04] blur-[80px]" />
           </div>
-          <div className="max-w-6xl mx-auto px-6 py-28 relative">
+          <div className="max-w-7xl mx-auto px-6 py-28 relative">
             <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
               <div>
                 <p className="text-amber-400 text-sm font-medium tracking-wide uppercase mb-4">
@@ -357,7 +357,7 @@ export default function HomePage() {
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute bottom-[-20%] left-[20%] w-[600px] h-[600px] rounded-full bg-accent/[0.04] blur-[100px]" />
           </div>
-          <div className="max-w-6xl mx-auto px-6 py-28 relative">
+          <div className="max-w-7xl mx-auto px-6 py-28 relative">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-white leading-[1.1] mb-6">
                 Simple, transparent pricing
@@ -430,7 +430,7 @@ export default function HomePage() {
 
         {/* Footer */}
         <footer className="border-t border-surface-300/50">
-          <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="max-w-7xl mx-auto px-6 py-12">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
               <div>
                 <p className="text-white font-semibold text-sm mb-1">
