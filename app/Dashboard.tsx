@@ -439,7 +439,7 @@ export default function Dashboard() {
           <span className="text-xs text-gray-600 group-hover:text-gray-400 transition-colors">Generate →</span>
         </Link>
 
-        <Link href="/sync" className="group rounded-xl border border-surface-300 bg-surface-100 p-4 hover:border-surface-400 hover:bg-surface-200/50 transition-all">
+        <Link href="/trades" className="group rounded-xl border border-surface-300 bg-surface-100 p-4 hover:border-surface-400 hover:bg-surface-200/50 transition-all">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
               <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

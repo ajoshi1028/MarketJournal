@@ -14,7 +14,6 @@ const NAV_LINKS = [
   { href: "/replay", label: "Replay" },
   { href: "/reports", label: "Reports" },
   { href: "/calculator", label: "Calculator" },
-  { href: "/sync", label: "Sync" },
   { href: "/billing", label: "Billing" },
 ];
 

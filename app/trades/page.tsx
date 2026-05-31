@@ -59,6 +59,11 @@ const EMPTY_FORM: FormState = {
   notes: "",
 };
 
+const CSV_BROKERS = [
+  { id: "robinhood", name: "Robinhood" },
+  { id: "webull", name: "Webull" },
+];
+
 const fmtUSD = (n: number | null | undefined) =>
   typeof n === "number"
     ? n.toLocaleString("en-US", { style: "currency", currency: "USD" })
@@ -69,7 +74,6 @@ const fmtPrice = (p?: number | null) =>
 
 const fmtDate = (iso?: string | null) => {
   if (!iso) return "—";
-  // Parse as UTC to avoid timezone shift
   const s = iso.slice(0, 10);
   const [y, m, d] = s.split("-").map(Number);
   if (!y || !m || !d) return "—";
@@ -79,6 +83,7 @@ const fmtDate = (iso?: string | null) => {
 export default function TradesPage() {
   const { user, isLoaded } = useUser();
 
+  /* Manual trade form */
   const [form, setForm] = useState<FormState>({ ...EMPTY_FORM });
   const [chartFile, setChartFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -86,6 +91,16 @@ export default function TradesPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [usage, setUsage] = useState<{ isPro: boolean; chart: { used: number; limit: number } } | null>(null);
+
+  /* CSV import */
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvBroker, setCsvBroker] = useState("robinhood");
+  const [csvStatus, setCsvStatus] = useState<string | null>(null);
+  const [csvIsError, setCsvIsError] = useState(false);
+  const [csvLoading, setCsvLoading] = useState(false);
+
+  /* Active tab for input method */
+  const [activeTab, setActiveTab] = useState<"csv" | "manual">("csv");
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -112,6 +127,49 @@ export default function TradesPage() {
     }
   }
 
+  /* ── CSV Import ── */
+  async function handleCsvImport(e: React.FormEvent) {
+    e.preventDefault();
+    if (!csvFile) return;
+    setCsvLoading(true);
+    setCsvStatus(null);
+    setCsvIsError(false);
+
+    try {
+      const fd = new FormData();
+      fd.append("broker", csvBroker);
+      fd.append("file", csvFile);
+
+      const res = await fetch("/api/import-trades", {
+        method: "POST",
+        body: fd,
+      });
+
+      const text = await res.text();
+      let body: Record<string, unknown> = {};
+      try {
+        body = JSON.parse(text);
+      } catch {
+        body = { raw: text };
+      }
+
+      if (!res.ok) {
+        setCsvIsError(true);
+        setCsvStatus(String(body.error || body.details || "Import failed"));
+      } else {
+        setCsvStatus(String(body.message || "Import successful!"));
+        setCsvFile(null);
+        await fetchTrades();
+      }
+    } catch {
+      setCsvIsError(true);
+      setCsvStatus("Network error");
+    } finally {
+      setCsvLoading(false);
+    }
+  }
+
+  /* ── Manual trade form ── */
   function setField(name: keyof FormState, value: unknown) {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
@@ -230,200 +288,312 @@ export default function TradesPage() {
 
   return (
     <main className="max-w-7xl mx-auto px-6 py-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-white mb-1">Trades</h1>
+        <p className="text-sm text-gray-500">Import from your broker or log trades manually.</p>
+      </div>
+
       {loadError && (
         <div className="mb-6 rounded-lg border border-red-500/30 bg-loss-muted px-4 py-3 text-red-400 text-sm">
           Failed to load trades: {loadError}
         </div>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* ---- FORM ---- */}
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-1">New Trade</h2>
-          <p className="text-sm text-gray-500 mb-5">
-            Prefer to import automatically?{" "}
-            <a href="/sync" className="text-accent-light hover:underline">
-              Sync your trades via CSV
-            </a>{" "}
-            on the Sync page.
-          </p>
-          <form onSubmit={handleSubmit} className="card p-6 space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label htmlFor="trade-ticker" className="label">Ticker *</label>
-                <input
-                  id="trade-ticker"
-                  type="text"
-                  value={form.ticker}
-                  onChange={(e) => setField("ticker", e.target.value)}
-                  className="input-field"
-                  placeholder="e.g., AAPL"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="trade-strategy" className="label">Strategy</label>
-                <input
-                  id="trade-strategy"
-                  type="text"
-                  value={form.strategy}
-                  onChange={(e) => setField("strategy", e.target.value)}
-                  className="input-field"
-                  placeholder="e.g., Put Credit Spread"
-                />
-              </div>
-              <div>
-                <label htmlFor="trade-position" className="label">Position *</label>
-                <select
-                  id="trade-position"
-                  value={form.positionType}
-                  onChange={(e) => setField("positionType", e.target.value)}
-                  className="input-field"
-                  required
-                >
-                  <option value="">Select</option>
-                  <option value="CALL">Call</option>
-                  <option value="PUT">Put</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="trade-entry-date" className="label">Entry Date *</label>
-                <input
-                  id="trade-entry-date"
-                  type="date"
-                  value={form.entryDate}
-                  onChange={(e) => setField("entryDate", e.target.value)}
-                  className="input-field"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="trade-strike" className="label">Strike Price</label>
-                <input
-                  id="trade-strike"
-                  type="number"
-                  step="0.5"
-                  min={0}
-                  value={form.strike}
-                  onChange={(e) => setField("strike", e.target.value)}
-                  className="input-field"
-                  placeholder="e.g., 701"
-                />
-              </div>
-              <div>
-                <label htmlFor="trade-expiry" className="label">Expiry</label>
-                <input
-                  id="trade-expiry"
-                  type="date"
-                  value={form.expiry}
-                  onChange={(e) => setField("expiry", e.target.value)}
-                  className="input-field"
-                />
-              </div>
-              <div>
-                <label htmlFor="trade-entry-time" className="label">Entry Time</label>
-                <input
-                  id="trade-entry-time"
-                  type="time"
-                  value={form.entryTime}
-                  onChange={(e) => setField("entryTime", e.target.value)}
-                  className="input-field"
-                />
-              </div>
-              <div>
-                <label htmlFor="trade-sell-date" className="label">Sell Date</label>
-                <input
-                  id="trade-sell-date"
-                  type="date"
-                  value={form.sellDate}
-                  onChange={(e) => setField("sellDate", e.target.value)}
-                  className="input-field"
-                />
-              </div>
-              <div>
-                <label htmlFor="trade-exit-time" className="label">Exit Time</label>
-                <input
-                  id="trade-exit-time"
-                  type="time"
-                  value={form.exitTime}
-                  onChange={(e) => setField("exitTime", e.target.value)}
-                  className="input-field"
-                />
-              </div>
-            </div>
-
-            {/* Buy Fills */}
-            <FillsSection
-              label="Buy Fills"
-              fills={form.buyFills}
-              side="buyFills"
-              onUpdate={updateFill}
-              onAdd={addFillRow}
-              onRemove={removeFillRow}
-            />
-
-            {/* Sell Fills */}
-            <FillsSection
-              label="Sell Fills"
-              fills={form.sellFills}
-              side="sellFills"
-              onUpdate={updateFill}
-              onAdd={addFillRow}
-              onRemove={removeFillRow}
-            />
-
-            <div>
-              <label htmlFor="trade-notes" className="label">Notes</label>
-              <textarea
-                id="trade-notes"
-                rows={3}
-                value={form.notes}
-                onChange={(e) => setField("notes", e.target.value)}
-                className="input-field resize-none"
-                placeholder="Additional notes..."
-              />
-            </div>
-
-            <div>
-              <label htmlFor="trade-chart" className="label">Chart Image (optional)</label>
-              <input
-                id="trade-chart"
-                type="file"
-                accept="image/*"
-                onChange={(e) => setChartFile(e.target.files?.[0] ?? null)}
-                className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4
-                           file:rounded-lg file:border-0 file:text-sm file:font-medium
-                           file:bg-surface-300 file:text-gray-200 hover:file:bg-surface-400
-                           file:cursor-pointer file:transition-colors"
-              />
-              {chartFile && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {chartFile.name} ({Math.round(chartFile.size / 1024)} KB)
-                </p>
+      <div className="grid lg:grid-cols-[420px_1fr] gap-8">
+        {/* ── LEFT: Input methods ── */}
+        <div className="space-y-0">
+          {/* Tab switcher */}
+          <div className="flex border-b border-surface-300 mb-0">
+            <button
+              onClick={() => setActiveTab("csv")}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
+                activeTab === "csv"
+                  ? "text-white"
+                  : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              CSV Import
+              {activeTab === "csv" && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-light" />
               )}
-              {usage && !usage.isPro && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {usage.chart.used >= usage.chart.limit ? (
-                    <>AI chart analysis limit reached. <a href="/account" className="text-accent-light hover:text-accent">Upgrade to Pro for unlimited</a></>
-                  ) : (
-                    <>{usage.chart.limit - usage.chart.used} free AI chart analyses remaining. <a href="/account" className="text-accent-light hover:text-accent">Upgrade to Pro for unlimited</a></>
-                  )}
-                </p>
-              )}
-            </div>
-
-            <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
-              {loading ? "Submitting..." : "Add Trade"}
             </button>
-          </form>
+            <button
+              onClick={() => setActiveTab("manual")}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
+                activeTab === "manual"
+                  ? "text-white"
+                  : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              Manual Entry
+              {activeTab === "manual" && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-light" />
+              )}
+            </button>
+          </div>
+
+          {/* CSV Import panel */}
+          {activeTab === "csv" && (
+            <div className="card rounded-t-none border-t-0 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-white">Import from broker</h2>
+                  <p className="text-xs text-gray-500">Upload your CSV trade history</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleCsvImport} className="space-y-3">
+                <div>
+                  <label htmlFor="csv-broker" className="label">Broker</label>
+                  <select
+                    id="csv-broker"
+                    value={csvBroker}
+                    onChange={(e) => setCsvBroker(e.target.value)}
+                    className="input-field"
+                  >
+                    {CSV_BROKERS.map((b) => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="csv-file" className="label">CSV File</label>
+                  <input
+                    id="csv-file"
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={(e) => setCsvFile(e.target.files?.[0] ?? null)}
+                    className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4
+                               file:rounded-lg file:border-0 file:text-sm file:font-medium
+                               file:bg-surface-300 file:text-gray-200 hover:file:bg-surface-400
+                               file:cursor-pointer file:transition-colors"
+                  />
+                  {csvFile && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      {csvFile.name} ({Math.round(csvFile.size / 1024)} KB)
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  disabled={csvLoading || !csvFile}
+                  className="btn-primary w-full text-sm disabled:opacity-50"
+                >
+                  {csvLoading ? "Importing..." : "Import Trades"}
+                </button>
+              </form>
+
+              {csvStatus && (
+                <p className={`mt-3 text-sm ${csvIsError ? "text-red-400" : "text-profit"}`}>
+                  {csvStatus}
+                </p>
+              )}
+
+              <div className="mt-4 pt-3 border-t border-surface-300 text-xs text-gray-600 space-y-1">
+                <p className="font-medium text-gray-500">How to export:</p>
+                <p><span className="text-gray-400">Robinhood:</span> Account → Statements & History → download CSV</p>
+                <p><span className="text-gray-400">Webull:</span> Account → Reports → Trade details → export CSV</p>
+              </div>
+            </div>
+          )}
+
+          {/* Manual Entry panel */}
+          {activeTab === "manual" && (
+            <form onSubmit={handleSubmit} className="card rounded-t-none border-t-0 p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="trade-ticker" className="label">Ticker *</label>
+                  <input
+                    id="trade-ticker"
+                    type="text"
+                    value={form.ticker}
+                    onChange={(e) => setField("ticker", e.target.value)}
+                    className="input-field"
+                    placeholder="e.g., AAPL"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="trade-strategy" className="label">Strategy</label>
+                  <input
+                    id="trade-strategy"
+                    type="text"
+                    value={form.strategy}
+                    onChange={(e) => setField("strategy", e.target.value)}
+                    className="input-field"
+                    placeholder="e.g., Put Credit Spread"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="trade-position" className="label">Position *</label>
+                  <select
+                    id="trade-position"
+                    value={form.positionType}
+                    onChange={(e) => setField("positionType", e.target.value)}
+                    className="input-field"
+                    required
+                  >
+                    <option value="">Select</option>
+                    <option value="CALL">Call</option>
+                    <option value="PUT">Put</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="trade-entry-date" className="label">Entry Date *</label>
+                  <input
+                    id="trade-entry-date"
+                    type="date"
+                    value={form.entryDate}
+                    onChange={(e) => setField("entryDate", e.target.value)}
+                    className="input-field"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="trade-strike" className="label">Strike Price</label>
+                  <input
+                    id="trade-strike"
+                    type="number"
+                    step="0.5"
+                    min={0}
+                    value={form.strike}
+                    onChange={(e) => setField("strike", e.target.value)}
+                    className="input-field"
+                    placeholder="e.g., 701"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="trade-expiry" className="label">Expiry</label>
+                  <input
+                    id="trade-expiry"
+                    type="date"
+                    value={form.expiry}
+                    onChange={(e) => setField("expiry", e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="trade-entry-time" className="label">Entry Time</label>
+                  <input
+                    id="trade-entry-time"
+                    type="time"
+                    value={form.entryTime}
+                    onChange={(e) => setField("entryTime", e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="trade-sell-date" className="label">Sell Date</label>
+                  <input
+                    id="trade-sell-date"
+                    type="date"
+                    value={form.sellDate}
+                    onChange={(e) => setField("sellDate", e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="trade-exit-time" className="label">Exit Time</label>
+                  <input
+                    id="trade-exit-time"
+                    type="time"
+                    value={form.exitTime}
+                    onChange={(e) => setField("exitTime", e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+              </div>
+
+              {/* Buy Fills */}
+              <FillsSection
+                label="Buy Fills"
+                fills={form.buyFills}
+                side="buyFills"
+                onUpdate={updateFill}
+                onAdd={addFillRow}
+                onRemove={removeFillRow}
+              />
+
+              {/* Sell Fills */}
+              <FillsSection
+                label="Sell Fills"
+                fills={form.sellFills}
+                side="sellFills"
+                onUpdate={updateFill}
+                onAdd={addFillRow}
+                onRemove={removeFillRow}
+              />
+
+              <div>
+                <label htmlFor="trade-notes" className="label">Notes</label>
+                <textarea
+                  id="trade-notes"
+                  rows={2}
+                  value={form.notes}
+                  onChange={(e) => setField("notes", e.target.value)}
+                  className="input-field resize-none"
+                  placeholder="Additional notes..."
+                />
+              </div>
+
+              <div>
+                <label htmlFor="trade-chart" className="label">Chart Image (optional)</label>
+                <input
+                  id="trade-chart"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setChartFile(e.target.files?.[0] ?? null)}
+                  className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4
+                             file:rounded-lg file:border-0 file:text-sm file:font-medium
+                             file:bg-surface-300 file:text-gray-200 hover:file:bg-surface-400
+                             file:cursor-pointer file:transition-colors"
+                />
+                {chartFile && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {chartFile.name} ({Math.round(chartFile.size / 1024)} KB)
+                  </p>
+                )}
+                {usage && !usage.isPro && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {usage.chart.used >= usage.chart.limit ? (
+                      <>AI chart analysis limit reached. <a href="/account" className="text-accent-light hover:text-accent">Upgrade to Pro</a></>
+                    ) : (
+                      <>{usage.chart.limit - usage.chart.used} free AI chart analyses remaining</>
+                    )}
+                  </p>
+                )}
+              </div>
+
+              <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
+                {loading ? "Submitting..." : "Add Trade"}
+              </button>
+            </form>
+          )}
         </div>
 
-        {/* ---- TRADE LIST ---- */}
+        {/* ── RIGHT: Trade list ── */}
         <div>
-          <h2 className="text-2xl font-bold text-white mb-5">Recent Trades</h2>
-          <div className="space-y-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white">
+              Recent Trades
+              {trades.length > 0 && (
+                <span className="text-sm font-normal text-gray-500 ml-2">({trades.length})</span>
+              )}
+            </h2>
+          </div>
+          <div className="space-y-3">
             {trades.length === 0 ? (
-              <p className="text-gray-500">No trades recorded yet.</p>
+              <div className="card p-8 text-center">
+                <p className="text-gray-500 mb-2">No trades recorded yet.</p>
+                <p className="text-sm text-gray-600">
+                  Import a CSV or log your first trade manually.
+                </p>
+              </div>
             ) : (
               trades.map((t) => (
                 <TradeCard
