@@ -145,7 +145,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-6 py-10">
+      <div className="max-w-7xl mx-auto px-6 py-10">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-surface-200 rounded w-48" />
           <div className="grid grid-cols-4 gap-4">
@@ -170,7 +170,7 @@ export default function Dashboard() {
   const totalCoachingReports = coachingDates.length;
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10">
+    <div className="max-w-7xl mx-auto px-6 py-10">
       {/* Header */}
       <div className="mb-8 flex items-end justify-between">
         <div>
@@ -353,98 +353,122 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Bottom row */}
-      <div className="grid sm:grid-cols-3 gap-4 mb-4">
-        {/* AI Coach */}
-        <Link href="/coaching" className="card px-4 py-4 hover:border-surface-400 transition-colors">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center text-accent-light">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      {/* Tools & Features */}
+      <div className="mb-3 mt-2">
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Tools</h2>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        {/* AI Coach — featured card */}
+        <Link href="/coaching" className="group relative col-span-2 lg:col-span-1 rounded-xl border border-purple-500/20 bg-gradient-to-br from-purple-500/10 via-surface-100 to-surface-100 p-5 hover:border-purple-500/40 transition-all overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl -translate-y-8 translate-x-8" />
+          <div className="relative">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center mb-4">
+              <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>
             </div>
-            <h2 className="text-sm font-medium text-white">AI Coach</h2>
+            <h3 className="text-base font-semibold text-white mb-1">AI Coach</h3>
+            {hasCoachingToday ? (
+              <p className="text-sm text-profit">Today&apos;s report is ready</p>
+            ) : totalCoachingReports > 0 ? (
+              <p className="text-sm text-gray-400">
+                {totalCoachingReports} report{totalCoachingReports !== 1 && "s"} generated · <span className="text-purple-400">Get today&apos;s</span>
+              </p>
+            ) : (
+              <p className="text-sm text-gray-400">Personalized coaching from your trades</p>
+            )}
+            <span className="inline-flex items-center gap-1 text-xs text-purple-400 mt-3 group-hover:gap-2 transition-all">
+              Open coach <span>→</span>
+            </span>
           </div>
-          {hasCoachingToday ? (
-            <p className="text-xs text-profit">Today&apos;s report is ready</p>
-          ) : totalCoachingReports > 0 ? (
-            <p className="text-xs text-gray-500">
-              {totalCoachingReports} report{totalCoachingReports !== 1 && "s"} generated · Get today&apos;s
-            </p>
-          ) : (
-            <p className="text-xs text-gray-500">Get personalized coaching based on your trades</p>
-          )}
         </Link>
 
         {/* Trade Replay */}
-        <Link href="/replay" className="card px-4 py-4 hover:border-surface-400 transition-colors">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center text-accent-light">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <Link href="/replay" className="group relative rounded-xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 via-surface-100 to-surface-100 p-5 hover:border-cyan-500/40 transition-all overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-2xl -translate-y-6 translate-x-6" />
+          <div className="relative">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/15 flex items-center justify-center mb-4">
+              <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
               </svg>
             </div>
-            <h2 className="text-sm font-medium text-white">Trade Replay</h2>
+            <h3 className="text-base font-semibold text-white mb-1">Trade Replay</h3>
+            <p className="text-sm text-gray-400">
+              {s.totalTrades > 0
+                ? `Review ${s.totalTrades} trades with live charts`
+                : "Replay trades with TradingView charts"}
+            </p>
+            <span className="inline-flex items-center gap-1 text-xs text-cyan-400 mt-3 group-hover:gap-2 transition-all">
+              Launch replay <span>→</span>
+            </span>
           </div>
-          <p className="text-xs text-gray-500">
-            {s.totalTrades > 0
-              ? `Review ${s.totalTrades} trades with live charts`
-              : "Replay trades with live TradingView charts"}
-          </p>
         </Link>
 
         {/* Risk Calculator */}
-        <Link href="/calculator" className="card px-4 py-4 hover:border-surface-400 transition-colors">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center text-accent-light">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <Link href="/calculator" className="group relative rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-surface-100 to-surface-100 p-5 hover:border-amber-500/40 transition-all overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl -translate-y-6 translate-x-6" />
+          <div className="relative">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center mb-4">
+              <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0012 2.25z" />
               </svg>
             </div>
-            <h2 className="text-sm font-medium text-white">Risk Calculator</h2>
+            <h3 className="text-base font-semibold text-white mb-1">Risk Calculator</h3>
+            <p className="text-sm text-gray-400">Position sizing & risk-reward ratios</p>
+            <span className="inline-flex items-center gap-1 text-xs text-amber-400 mt-3 group-hover:gap-2 transition-all">
+              Calculate <span>→</span>
+            </span>
           </div>
-          <p className="text-xs text-gray-500">Position sizing & risk-reward ratios</p>
         </Link>
       </div>
 
-      {/* Quick links row */}
-      <div className="grid sm:grid-cols-3 gap-4">
-        <Link href="/reports" className="card px-4 py-4 hover:border-surface-400 transition-colors">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center text-accent-light">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      {/* Secondary links */}
+      <div className="grid grid-cols-3 gap-4">
+        <Link href="/reports" className="group rounded-xl border border-surface-300 bg-surface-100 p-4 hover:border-surface-400 hover:bg-surface-200/50 transition-all">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+              <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
               </svg>
             </div>
-            <h2 className="text-sm font-medium text-white">PDF Reports</h2>
+            <div>
+              <h3 className="text-sm font-medium text-white">PDF Reports</h3>
+              <p className="text-xs text-gray-500">Downloadable trade reports</p>
+            </div>
           </div>
-          <p className="text-xs text-gray-500">Generate downloadable trade reports</p>
+          <span className="text-xs text-gray-600 group-hover:text-gray-400 transition-colors">Generate →</span>
         </Link>
 
-        <Link href="/sync" className="card px-4 py-4 hover:border-surface-400 transition-colors">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center text-accent-light">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <Link href="/sync" className="group rounded-xl border border-surface-300 bg-surface-100 p-4 hover:border-surface-400 hover:bg-surface-200/50 transition-all">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
               </svg>
             </div>
-            <h2 className="text-sm font-medium text-white">CSV Import</h2>
+            <div>
+              <h3 className="text-sm font-medium text-white">CSV Import</h3>
+              <p className="text-xs text-gray-500">Sync from your broker</p>
+            </div>
           </div>
-          <p className="text-xs text-gray-500">Sync trades from your broker</p>
+          <span className="text-xs text-gray-600 group-hover:text-gray-400 transition-colors">Import →</span>
         </Link>
 
-        <Link href="/billing" className="card px-4 py-4 hover:border-surface-400 transition-colors">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center text-accent-light">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <Link href="/billing" className="group rounded-xl border border-surface-300 bg-surface-100 p-4 hover:border-surface-400 hover:bg-surface-200/50 transition-all">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+              <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
               </svg>
             </div>
-            <h2 className="text-sm font-medium text-white">Billing</h2>
+            <div>
+              <h3 className="text-sm font-medium text-white">Billing</h3>
+              <p className="text-xs text-gray-500">
+                {isPro ? "Pro plan active" : "Free plan · Upgrade"}
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-gray-500">
-            {isPro ? "Pro plan active" : "Free plan · Upgrade for unlimited"}
-          </p>
+          <span className="text-xs text-gray-600 group-hover:text-gray-400 transition-colors">Manage →</span>
         </Link>
       </div>
     </div>
