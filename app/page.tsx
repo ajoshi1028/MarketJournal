@@ -4,12 +4,134 @@ import Dashboard from "./Dashboard";
 
 export const dynamic = "force-dynamic";
 
+/* ── Inline product previews (pure CSS, no images needed) ── */
+
+function DashboardPreview() {
+  return (
+    <div className="rounded-2xl bg-surface-100 border border-surface-300/40 p-5 shadow-2xl shadow-black/40 select-none" aria-hidden="true">
+      {/* Stat cards */}
+      <div className="grid grid-cols-4 gap-3 mb-4">
+        {[
+          { label: "Net P&L", value: "+$618.91", color: "text-profit" },
+          { label: "Win Rate", value: "49.4%", color: "text-white" },
+          { label: "Profit Factor", value: "1.14", color: "text-white" },
+          { label: "Loss Streak", value: "1", color: "text-loss" },
+        ].map((s) => (
+          <div key={s.label} className="bg-surface-200/60 rounded-xl p-3">
+            <p className="text-[10px] text-gray-500 mb-1">{s.label}</p>
+            <p className={`text-sm font-bold font-mono ${s.color}`}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-5 gap-3">
+        {/* Recent trades */}
+        <div className="col-span-3 bg-surface-200/40 rounded-xl p-3">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-white">Recent Trades</p>
+            <span className="text-[10px] text-accent-light">Log trade &rarr;</span>
+          </div>
+          <div className="space-y-2">
+            {[
+              { ticker: "IWM", detail: "May 25 · Call $286", pnl: "$192.05", loss: true },
+              { ticker: "QQQ", detail: "May 21 · Call $717", pnl: "$48.28", loss: true },
+              { ticker: "QQQ", detail: "May 21 · Put $712", pnl: "+$119.15", loss: false },
+              { ticker: "QQQ", detail: "May 19 · Put $693", pnl: "+$3.68", loss: false },
+              { ticker: "QQQ", detail: "May 18 · Put $702", pnl: "+$43.80", loss: false },
+            ].map((t, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className={`w-1.5 h-1.5 rounded-full ${t.loss ? "bg-loss" : "bg-profit"}`} />
+                  <div>
+                    <p className="text-[11px] font-semibold text-white">{t.ticker}</p>
+                    <p className="text-[9px] text-gray-500">{t.detail}</p>
+                  </div>
+                </div>
+                <p className={`text-[11px] font-mono font-medium ${t.loss ? "text-loss" : "text-profit"}`}>{t.pnl}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Journal */}
+        <div className="col-span-2 bg-surface-200/40 rounded-xl p-3">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-white">Today&apos;s Journal</p>
+            <span className="text-[10px] text-accent-light">Edit &rarr;</span>
+          </div>
+          <p className="text-[9px] text-gray-500 mb-1">Pre-market plan</p>
+          <p className="text-[11px] text-white mb-4">Looking for a Bullish Day!</p>
+          <p className="text-[10px] text-accent-light italic">Don&apos;t forget your post-market review today.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsPreview() {
+  return (
+    <div className="rounded-2xl bg-surface-100 border border-surface-300/40 p-5 shadow-2xl shadow-black/40 select-none" aria-hidden="true">
+      {/* Stat row */}
+      <div className="grid grid-cols-5 gap-2 mb-3">
+        {[
+          { label: "Net P&L", value: "$618.91", color: "text-profit" },
+          { label: "Win Rate", value: "49.4%", color: "text-loss" },
+          { label: "Profit Factor", value: "1.14", color: "text-white" },
+          { label: "Expectancy", value: "$8.04", color: "text-white" },
+          { label: "Risk/Reward", value: "1:1.17", color: "text-white" },
+        ].map((s) => (
+          <div key={s.label} className="bg-surface-200/60 rounded-lg p-2.5">
+            <p className="text-[9px] text-gray-500 mb-0.5">{s.label}</p>
+            <p className={`text-xs font-bold font-mono ${s.color}`}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Streaks */}
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        {[
+          { label: "Current Streak", value: "1L", color: "text-loss" },
+          { label: "Best Win Streak", value: "4", color: "text-profit" },
+          { label: "Worst Loss Streak", value: "5", color: "text-loss" },
+        ].map((s) => (
+          <div key={s.label} className="bg-surface-200/40 rounded-lg p-2.5 text-center">
+            <p className="text-[9px] text-gray-500 mb-0.5">{s.label}</p>
+            <p className={`text-sm font-bold font-mono ${s.color}`}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* P&L by Day chart mockup */}
+      <div className="bg-surface-200/40 rounded-lg p-3">
+        <p className="text-[10px] font-semibold text-white mb-3">P&L by Day of Week</p>
+        <div className="flex items-end justify-between gap-1 h-20 px-2">
+          {[
+            { day: "Mon", h: 40, positive: true },
+            { day: "Tue", h: 55, positive: true },
+            { day: "Wed", h: 35, positive: false },
+            { day: "Thu", h: 25, positive: true },
+            { day: "Fri", h: 15, positive: true },
+          ].map((d) => (
+            <div key={d.day} className="flex flex-col items-center gap-1 flex-1">
+              <div
+                className={`w-full max-w-[28px] rounded-sm ${d.positive ? "bg-profit/80" : "bg-loss/70"}`}
+                style={{ height: `${d.h}px` }}
+              />
+              <span className="text-[8px] text-gray-500">{d.day}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   return (
     <main>
       <SignedOut>
         {/* Hero */}
-        <section className="relative overflow-hidden min-h-[90vh] flex items-center">
+        <section className="relative overflow-hidden">
           {/* Gradient mesh background */}
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-accent/[0.07] blur-[120px]" />
@@ -17,7 +139,7 @@ export default function HomePage() {
             <div className="absolute top-[20%] left-[30%] w-[400px] h-[400px] rounded-full bg-profit/[0.04] blur-[80px]" />
           </div>
 
-          <div className="max-w-7xl mx-auto px-6 pt-20 pb-32 relative">
+          <div className="max-w-7xl mx-auto px-6 pt-20 pb-12 relative">
             <div className="max-w-4xl mx-auto text-center">
               <p className="text-accent-light text-sm font-medium tracking-wide uppercase mb-6">
                 Options Trading Journal
@@ -33,7 +155,7 @@ export default function HomePage() {
                 Log trades, analyze charts with AI, get personalized coaching,
                 and track performance with deep analytics — all in one platform.
               </p>
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center justify-center gap-4 mb-6">
                 <Link
                   href="/sign-up"
                   className="bg-accent hover:bg-accent-dark text-white font-semibold px-8 py-4 rounded-full text-sm transition-all hover:shadow-lg hover:shadow-accent/25"
@@ -48,6 +170,20 @@ export default function HomePage() {
                   Sign in
                 </Link>
               </div>
+              <p className="text-gray-600 text-xs">
+                No credit card required.{" "}
+                <Link href="/terms" className="underline hover:text-gray-400 transition-colors">Terms</Link>
+                {" & "}
+                <Link href="/privacy" className="underline hover:text-gray-400 transition-colors">Privacy</Link>
+              </p>
+            </div>
+          </div>
+
+          {/* Dashboard preview — hero visual */}
+          <div className="max-w-5xl mx-auto px-6 pb-28 relative">
+            <div className="relative">
+              <div className="absolute -inset-4 bg-gradient-to-b from-accent/[0.08] via-purple-500/[0.04] to-transparent rounded-3xl blur-2xl pointer-events-none" />
+              <DashboardPreview />
             </div>
           </div>
         </section>
@@ -118,7 +254,6 @@ export default function HomePage() {
 
               {/* Right stack */}
               <div className="md:col-span-5 flex flex-col gap-4">
-                {/* AI Coaching */}
                 <div className="flex-1 rounded-2xl bg-gradient-to-br from-purple-500/[0.08] to-surface-100 p-8 relative overflow-hidden group">
                   <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/[0.06] rounded-full blur-[50px] group-hover:bg-purple-500/[0.1] transition-all duration-700" />
                   <div className="relative">
@@ -130,7 +265,6 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Chart Analysis */}
                 <div className="flex-1 rounded-2xl bg-gradient-to-br from-profit/[0.06] to-surface-100 p-8 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-48 h-48 bg-profit/[0.05] rounded-full blur-[50px] group-hover:bg-profit/[0.09] transition-all duration-700" />
                   <div className="relative">
@@ -180,60 +314,45 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* How it works — flowing section */}
+        {/* Analytics showcase */}
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-[10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-accent/[0.04] blur-[100px]" />
+            <div className="absolute top-[10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-amber-500/[0.03] blur-[100px]" />
+            <div className="absolute bottom-[10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-accent/[0.04] blur-[80px]" />
           </div>
           <div className="max-w-6xl mx-auto px-6 py-28 relative">
-            <div className="text-center mb-20">
-              <h2 className="text-4xl md:text-5xl font-bold text-white leading-[1.1] mb-6">
-                Built for how traders
-                <br />
-                actually work
-              </h2>
-            </div>
-
-            <div className="space-y-24">
-              {[
-                {
-                  step: "01",
-                  title: "Log your trades",
-                  desc: "Enter trades manually or import from your broker via CSV. Every field an options trader needs — strike, expiry, fills, and charts.",
-                  align: "left" as const,
-                },
-                {
-                  step: "02",
-                  title: "Get AI insights",
-                  desc: "Upload chart screenshots for instant analysis. Generate daily coaching reports that cover today, this week, and overall patterns.",
-                  align: "right" as const,
-                },
-                {
-                  step: "03",
-                  title: "Track and improve",
-                  desc: "Deep analytics reveal where you make and lose money. Win rate, profit factor, P&L by weekday, ticker breakdowns, and streaks — all automatic.",
-                  align: "left" as const,
-                },
-              ].map((item) => (
-                <div
-                  key={item.step}
-                  className={`flex flex-col md:flex-row items-start gap-8 max-w-3xl ${
-                    item.align === "right" ? "md:ml-auto md:text-right md:flex-row-reverse" : ""
-                  }`}
-                >
-                  <span className="text-6xl md:text-8xl font-bold text-surface-300/60 leading-none shrink-0 select-none">
-                    {item.step}
-                  </span>
-                  <div>
-                    <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                      {item.title}
-                    </h3>
-                    <p className="text-gray-400 text-lg leading-relaxed">
-                      {item.desc}
+            <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
+              <div>
+                <p className="text-amber-400 text-sm font-medium tracking-wide uppercase mb-4">
+                  Analytics
+                </p>
+                <h2 className="text-4xl md:text-5xl font-bold text-white leading-[1.1] mb-6">
+                  See where you make
+                  <br />
+                  and lose money
+                </h2>
+                <p className="text-gray-400 text-lg leading-relaxed mb-8">
+                  10+ metrics across all your trades — updated automatically every time you log a trade.
+                </p>
+                <div className="space-y-3">
+                  {[
+                    "Win rate, profit factor & expectancy",
+                    "P&L breakdown by day of week",
+                    "Monthly performance trends",
+                    "Ticker & strategy analysis",
+                    "Win and loss streaks",
+                  ].map((item) => (
+                    <p key={item} className="text-sm text-gray-300 flex items-center gap-3">
+                      <span className="w-1 h-1 rounded-full bg-amber-400 shrink-0" />
+                      {item}
                     </p>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+              <div className="relative">
+                <div className="absolute -inset-4 bg-gradient-to-br from-amber-500/[0.06] via-transparent to-accent/[0.04] rounded-3xl blur-2xl pointer-events-none" />
+                <AnalyticsPreview />
+              </div>
             </div>
           </div>
         </section>
@@ -312,39 +431,10 @@ export default function HomePage() {
                   href="/sign-up"
                   className="block text-center text-sm font-semibold text-white bg-accent hover:bg-accent-dark px-6 py-3.5 rounded-full transition-all hover:shadow-lg hover:shadow-accent/25"
                 >
-                  Start free trial
+                  Upgrade to Pro
                 </Link>
               </div>
             </div>
-          </div>
-        </section>
-
-        {/* Final CTA */}
-        <section className="relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-[-30%] left-[40%] w-[700px] h-[700px] rounded-full bg-accent/[0.06] blur-[120px]" />
-            <div className="absolute bottom-[-20%] right-[20%] w-[400px] h-[400px] rounded-full bg-purple-500/[0.04] blur-[80px]" />
-          </div>
-          <div className="max-w-4xl mx-auto px-6 py-32 text-center relative">
-            <h2 className="text-4xl md:text-6xl font-bold text-white leading-[1.1] mb-6">
-              Ready to find your edge?
-            </h2>
-            <p className="text-gray-400 text-lg mb-10 max-w-xl mx-auto">
-              Join traders using MarketJournal to log, analyze, and improve their performance every day.
-            </p>
-            <Link
-              href="/sign-up"
-              className="inline-flex items-center bg-white text-surface font-semibold px-10 py-4 rounded-full text-sm hover:bg-gray-100 transition-all hover:shadow-xl hover:shadow-white/10"
-            >
-              Start for free
-              <span className="ml-2">&#8594;</span>
-            </Link>
-            <p className="text-gray-600 text-xs mt-6">
-              No credit card required.{" "}
-              <Link href="/terms" className="underline hover:text-gray-400 transition-colors">Terms</Link>
-              {" & "}
-              <Link href="/privacy" className="underline hover:text-gray-400 transition-colors">Privacy</Link>
-            </p>
           </div>
         </section>
 
