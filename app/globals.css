@@ -13,6 +13,11 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  h1, h2, h3 {
+    font-family: var(--font-heading), system-ui, sans-serif;
+    font-weight: 300;
+  }
+
   ::selection {
     @apply bg-accent/25 text-white;
   }

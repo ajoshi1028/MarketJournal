@@ -1,11 +1,12 @@
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Urbanist } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import NavBar from "./NavBar";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
+const urbanist = Urbanist({ subsets: ["latin"], variable: "--font-heading", weight: ["300", "400", "500", "600"] });
 
 export const metadata = {
   title: "Market Journal",
@@ -63,7 +64,7 @@ export default function RootLayout({
         },
       }}
     >
-      <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
+      <html lang="en" className={`${geist.variable} ${geistMono.variable} ${urbanist.variable}`}>
         <body>
           <a href="#main-content" className="skip-nav">Skip to main content</a>
           <NavBar />
