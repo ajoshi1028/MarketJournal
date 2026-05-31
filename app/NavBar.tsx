@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
 const NAV_LINKS = [
@@ -11,15 +11,39 @@ const NAV_LINKS = [
   { href: "/analytics", label: "Analytics" },
   { href: "/journal", label: "Journal" },
   { href: "/coaching", label: "Coaching" },
-  { href: "/replay", label: "Replay" },
-  { href: "/reports", label: "Reports" },
-  { href: "/calculator", label: "Calculator" },
   { href: "/billing", label: "Billing" },
+];
+
+const TOOLS_LINKS = [
+  { href: "/replay", label: "Trade Replay", desc: "Review trades with live charts" },
+  { href: "/calculator", label: "Risk Calculator", desc: "Position sizing & risk-reward" },
+  { href: "/reports", label: "PDF Reports", desc: "Generate downloadable reports" },
 ];
 
 export default function NavBar() {
   const [open, setOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const toolsRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+
+  const isToolsActive = TOOLS_LINKS.some((l) => pathname === l.href);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (toolsRef.current && !toolsRef.current.contains(e.target as Node)) {
+        setToolsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  // Close dropdown on route change
+  useEffect(() => {
+    setToolsOpen(false);
+    setOpen(false);
+  }, [pathname]);
 
   return (
     <nav className="sticky top-0 z-50 bg-surface-50/80 backdrop-blur-xl border-b border-surface-300">
@@ -46,6 +70,48 @@ export default function NavBar() {
                   {l.label}
                 </Link>
               ))}
+
+              {/* Tools dropdown */}
+              <div ref={toolsRef} className="relative">
+                <button
+                  onClick={() => setToolsOpen(!toolsOpen)}
+                  className={`nav-link text-sm inline-flex items-center gap-1 ${
+                    isToolsActive ? "text-accent-light" : ""
+                  }`}
+                  aria-expanded={toolsOpen}
+                  aria-haspopup="true"
+                >
+                  Tools
+                  <svg
+                    className={`w-3.5 h-3.5 transition-transform ${toolsOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {toolsOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-56 rounded-xl bg-surface-100 border border-surface-300 shadow-xl shadow-black/30 py-1.5 z-50">
+                    {TOOLS_LINKS.map((l) => (
+                      <Link
+                        key={l.href}
+                        href={l.href}
+                        className={`block px-4 py-2.5 transition-colors hover:bg-surface-200 ${
+                          pathname === l.href ? "bg-surface-200" : ""
+                        }`}
+                      >
+                        <span className={`text-sm font-medium ${pathname === l.href ? "text-accent-light" : "text-white"}`}>
+                          {l.label}
+                        </span>
+                        <span className="block text-xs text-gray-500 mt-0.5">{l.desc}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </SignedIn>
         </div>
@@ -127,6 +193,24 @@ export default function NavBar() {
                   {l.label}
                 </Link>
               ))}
+              {/* Tools section in mobile */}
+              <div className="col-span-2 mt-2 pt-2 border-t border-surface-300">
+                <p className="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wider">Tools</p>
+                {TOOLS_LINKS.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={() => setOpen(false)}
+                    className={`px-3 py-2.5 rounded-lg text-sm transition-colors block ${
+                      pathname === l.href
+                        ? "bg-accent/15 text-accent-light"
+                        : "text-gray-400 hover:bg-surface-200 hover:text-gray-200"
+                    }`}
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         )}
