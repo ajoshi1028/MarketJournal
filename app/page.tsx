@@ -146,7 +146,7 @@ export default function HomePage() {
                 <br />
                 <span className="text-accent-light">for smarter trading</span>
               </h1>
-              <p className="text-lg md:text-xl text-gray-400 leading-relaxed mb-12 max-w-2xl mx-auto">
+              <p className="text-lg md:text-xl text-gray-400 leading-relaxed mb-12 max-w-2xl mx-auto font-[family-name:var(--font-heading)] font-light">
                 Log trades, analyze charts with AI, get personalized coaching,
                 and track performance with deep analytics — all in one platform.
               </p>
