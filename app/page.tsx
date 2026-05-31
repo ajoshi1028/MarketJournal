@@ -141,11 +141,8 @@ export default function HomePage() {
 
           <div className="max-w-7xl mx-auto px-6 pt-20 pb-12 relative">
             <div className="max-w-4xl mx-auto text-center">
-              <p className="text-accent-light text-sm font-medium tracking-wide uppercase mb-6">
-                Options Trading Journal
-              </p>
               <h1 className="text-5xl sm:text-6xl md:text-[5.5rem] font-bold tracking-tight text-white leading-[1.05] mb-8">
-                Financial infrastructure
+                Financial platform
                 <br />
                 <span className="bg-gradient-to-r from-accent-light via-purple-400 to-profit bg-clip-text text-transparent">
                   for smarter trading
@@ -158,7 +155,7 @@ export default function HomePage() {
               <div className="flex items-center justify-center gap-4 mb-6">
                 <Link
                   href="/sign-up"
-                  className="bg-accent hover:bg-accent-dark text-white font-semibold px-8 py-4 rounded-full text-sm transition-all hover:shadow-lg hover:shadow-accent/25"
+                  className="bg-accent hover:bg-accent-dark text-white font-semibold px-8 py-4 rounded-lg text-sm transition-all hover:shadow-lg hover:shadow-accent/25"
                 >
                   Start for free
                   <span className="ml-2 inline-block">&#8594;</span>
@@ -391,7 +388,7 @@ export default function HomePage() {
                 </div>
                 <Link
                   href="/sign-up"
-                  className="block text-center text-sm font-semibold text-white bg-surface-300 hover:bg-surface-400 px-6 py-3.5 rounded-full transition-colors"
+                  className="block text-center text-sm font-semibold text-white bg-surface-300 hover:bg-surface-400 px-6 py-3.5 rounded-lg transition-colors"
                 >
                   Get started
                 </Link>
@@ -399,12 +396,7 @@ export default function HomePage() {
 
               {/* Pro */}
               <div className="rounded-2xl bg-gradient-to-br from-accent/[0.12] to-surface-100 p-8 md:p-10 ring-1 ring-accent/20">
-                <div className="flex items-center gap-3 mb-1">
-                  <p className="text-sm font-medium text-accent-light">Pro</p>
-                  <span className="text-[10px] font-semibold text-accent-light bg-accent/15 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    Popular
-                  </span>
-                </div>
+                <p className="text-sm font-medium text-accent-light mb-1">Pro</p>
                 <p className="text-5xl font-bold text-white mb-2 tracking-tight">
                   $19
                   <span className="text-lg text-gray-500 font-normal ml-1">/mo</span>
@@ -429,7 +421,7 @@ export default function HomePage() {
                 </div>
                 <Link
                   href="/sign-up"
-                  className="block text-center text-sm font-semibold text-white bg-accent hover:bg-accent-dark px-6 py-3.5 rounded-full transition-all hover:shadow-lg hover:shadow-accent/25"
+                  className="block text-center text-sm font-semibold text-white bg-accent hover:bg-accent-dark px-6 py-3.5 rounded-lg transition-all hover:shadow-lg hover:shadow-accent/25"
                 >
                   Upgrade to Pro
                 </Link>
