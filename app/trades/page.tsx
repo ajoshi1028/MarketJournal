@@ -109,34 +109,6 @@ export default function TradesPage() {
   /* Active tab for input method */
   const [activeTab, setActiveTab] = useState<"csv" | "manual">("csv");
 
-  useEffect(() => {
-    if (isLoaded && user) {
-      fetchTrades(true);
-      fetch("/api/usage", { cache: "no-store" })
-        .then(r => r.ok ? r.json() : null)
-        .then(d => d && setUsage(d))
-        .catch(() => {});
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded, user]);
-
-  // Infinite scroll observer
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && nextCursor && !loadingMore) {
-          fetchTrades(false);
-        }
-      },
-      { rootMargin: "200px" }
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [nextCursor, loadingMore, fetchTrades]);
-
   const fetchTrades = useCallback(async (reset = true) => {
     try {
       const cursor = reset ? "" : nextCursor;
@@ -166,6 +138,34 @@ export default function TradesPage() {
       setLoadingMore(false);
     }
   }, [nextCursor]);
+
+  useEffect(() => {
+    if (isLoaded && user) {
+      fetchTrades(true);
+      fetch("/api/usage", { cache: "no-store" })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => d && setUsage(d))
+        .catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, user]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && nextCursor && !loadingMore) {
+          fetchTrades(false);
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [nextCursor, loadingMore, fetchTrades]);
 
 
   /* ── CSV Import ── */
