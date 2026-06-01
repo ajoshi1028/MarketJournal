@@ -112,7 +112,6 @@ export default function TradesPage() {
   useEffect(() => {
     if (isLoaded && user) {
       fetchTrades(true);
-      fetchCount();
       fetch("/api/usage", { cache: "no-store" })
         .then(r => r.ok ? r.json() : null)
         .then(d => d && setUsage(d))
@@ -155,6 +154,7 @@ export default function TradesPage() {
 
       if (reset) {
         setTrades(items);
+        if (data.total != null) setTotalCount(data.total);
       } else {
         setTrades((prev) => [...prev, ...items]);
       }
@@ -167,16 +167,6 @@ export default function TradesPage() {
     }
   }, [nextCursor]);
 
-  // Fetch total count for display
-  const fetchCount = useCallback(async () => {
-    try {
-      const res = await fetch("/api/trades", { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data)) setTotalCount(data.length);
-      }
-    } catch {}
-  }, []);
 
   /* ── CSV Import ── */
   async function handleCsvImport(e: React.FormEvent) {
@@ -211,8 +201,7 @@ export default function TradesPage() {
         setCsvStatus(String(body.message || "Import successful!"));
         setCsvFile(null);
         await fetchTrades(true);
-        fetchCount();
-      }
+        }
     } catch {
       setCsvIsError(true);
       setCsvStatus("Network error");
@@ -302,7 +291,6 @@ export default function TradesPage() {
       setForm({ ...EMPTY_FORM });
       setChartFile(null);
       await fetchTrades(true);
-      fetchCount();
     } catch {
       alert("Network error. Please try again.");
     } finally {
