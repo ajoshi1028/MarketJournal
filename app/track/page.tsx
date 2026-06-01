@@ -148,7 +148,10 @@ export default function TrackPage() {
     [sorted, visibleCount],
   );
 
-  // Grow the window when the sentinel scrolls into view
+  // Grow the window when the sentinel scrolls into view.
+  // Keyed on sorted.length only (NOT visibleCount) so the observer is created
+  // once per dataset — re-creating it on every load would make its mandatory
+  // initial callback re-fire in a loop and cascade through all rows at once.
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
@@ -160,11 +163,12 @@ export default function TrackPage() {
           );
         }
       },
-      { rootMargin: "200px" },
+      { rootMargin: "120px" },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [sorted.length, visibleCount]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sorted.length]);
 
   async function clearAllTrades() {
     setClearing(true);

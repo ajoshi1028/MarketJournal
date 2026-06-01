@@ -89,7 +89,11 @@ export default function ReplayPage() {
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [loading, trades.length, visibleCount]);
+    // NOTE: visibleCount must NOT be a dep. A freshly created IntersectionObserver
+    // always fires an initial callback; including visibleCount recreates the observer
+    // on every load and cascades through the whole list at once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, trades.length]);
 
   if (loading)
     return (
