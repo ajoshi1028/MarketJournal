@@ -8,6 +8,9 @@ type Trade = {
   ticker: string;
   strategy: string | null;
   positionType: "LONG" | "SHORT";
+  optionType?: string | null;
+  strike?: number | null;
+  expiry?: string | null;
   entryDate: string;
   sellDate?: string | null;
   totalBuyQty?: number | null;
@@ -338,8 +341,9 @@ function TradeRow({
         ? "bg-loss-muted"
         : "bg-surface-100";
 
+  const displayType = t.optionType || t.positionType;
   const posBadge =
-    t.positionType === "LONG"
+    displayType === "CALL" || displayType === "LONG"
       ? "bg-profit/15 text-profit"
       : "bg-loss/15 text-loss";
 
@@ -380,7 +384,7 @@ function TradeRow({
           <div className="flex items-center gap-2 mb-0.5">
             <h3 className="font-semibold text-white">{t.ticker}</h3>
             <span className="text-xs text-gray-500 truncate">
-              {t.strategy || `${fmtDate(t.entryDate)}${t.sellDate ? ` → ${fmtDate(t.sellDate)}` : ""}`}
+              {t.optionType && t.strike ? `${t.strike} ${t.optionType}` : ""}{t.optionType && t.strike && t.strategy ? " · " : ""}{t.strategy || (!t.optionType ? `${fmtDate(t.entryDate)}${t.sellDate ? ` → ${fmtDate(t.sellDate)}` : ""}` : "")}
             </span>
           </div>
           <p className="text-xs text-gray-500 truncate">
@@ -399,7 +403,7 @@ function TradeRow({
               {fmtUSD(t.realizedPnl)}
             </p>
           </div>
-          <span className={`badge text-xs ${posBadge}`}>{t.positionType}</span>
+          <span className={`badge text-xs ${posBadge}`}>{displayType === "CALL" ? "Call" : displayType === "PUT" ? "Put" : t.positionType}</span>
           {(t.aiAnalysis || t.chartUrl) && (
             <span className="w-1.5 h-1.5 rounded-full bg-accent-light shrink-0" title="Has analysis" />
           )}
