@@ -150,21 +150,6 @@ export default function HomePage() {
                 Log trades, analyze charts with AI, get personalized coaching,
                 and track performance with deep analytics — all in one platform.
               </p>
-              <div className="flex items-center justify-center gap-4 mb-6">
-                <Link
-                  href="/sign-up"
-                  className="bg-accent hover:bg-accent-dark text-white font-semibold px-8 py-4 rounded-lg text-sm transition-all hover:shadow-lg hover:shadow-accent/25"
-                >
-                  Start for free
-                  <span className="ml-2 inline-block">&#8594;</span>
-                </Link>
-                <Link
-                  href="/sign-in"
-                  className="text-gray-400 hover:text-white text-sm font-medium transition-colors px-6 py-4"
-                >
-                  Sign in
-                </Link>
-              </div>
               <p className="text-gray-600 text-xs">
                 No credit card required.{" "}
                 <Link href="/terms" className="underline hover:text-gray-400 transition-colors">Terms</Link>
