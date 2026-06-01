@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 
 type Trade = {
@@ -129,6 +129,42 @@ export default function TrackPage() {
     });
     return copy;
   }, [filtered, sortKey]);
+
+  /* Render-windowing: paint a slice, grow as you scroll.
+     We keep the full list in memory so filters/sort still cover every trade. */
+  const PAGE_SIZE = 10;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const sortedLenRef = useRef(0);
+  sortedLenRef.current = sorted.length;
+
+  // Reset the window whenever filters or sort change
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [posFilter, outcomeFilter, tickerFilter, strategyFilter, sortKey]);
+
+  const visible = useMemo(
+    () => sorted.slice(0, visibleCount),
+    [sorted, visibleCount],
+  );
+
+  // Grow the window when the sentinel scrolls into view
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) =>
+            c < sortedLenRef.current ? c + PAGE_SIZE : c,
+          );
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [sorted.length, visibleCount]);
 
   async function clearAllTrades() {
     setClearing(true);
@@ -284,9 +320,23 @@ export default function TrackPage() {
         {sorted.length === 0 ? (
           <p className="text-gray-500">No trades match your filters.</p>
         ) : (
-          sorted.map((t) => (
-            <TradeRow key={t.id} t={t} setAiResult={setAiResult} />
-          ))
+          <>
+            {visible.map((t) => (
+              <TradeRow key={t.id} t={t} setAiResult={setAiResult} />
+            ))}
+            {visibleCount < sorted.length && (
+              <div
+                ref={sentinelRef}
+                className="py-4 flex items-center justify-center gap-2 text-sm text-gray-600"
+              >
+                <span className="inline-block w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                Loading more…
+              </div>
+            )}
+            <p className="text-center text-xs text-gray-600 pt-1">
+              Showing {visible.length} of {sorted.length} trades
+            </p>
+          </>
         )}
       </div>
 

@@ -48,6 +48,14 @@ export default function ReplayPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const chartRef = useRef<TradeChartHandle>(null);
 
+  /* Render-windowing for the sidebar list */
+  const SIDEBAR_PAGE = 15;
+  const [visibleCount, setVisibleCount] = useState(SIDEBAR_PAGE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const tradesLenRef = useRef(0);
+  tradesLenRef.current = trades.length;
+
   useEffect(() => {
     (async () => {
       try {
@@ -62,6 +70,26 @@ export default function ReplayPage() {
       setLoading(false);
     })();
   }, []);
+
+  // Grow the sidebar window on scroll. Observer is rooted to the scroll
+  // container because the list scrolls internally, not the page.
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    const root = scrollRef.current;
+    if (!sentinel || !root) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) =>
+            c < tradesLenRef.current ? c + SIDEBAR_PAGE : c,
+          );
+        }
+      },
+      { root, rootMargin: "150px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loading, trades.length, visibleCount]);
 
   if (loading)
     return (
@@ -83,7 +111,7 @@ export default function ReplayPage() {
 
       <div className="grid lg:grid-cols-[300px_1fr] gap-6">
         {/* Trade list sidebar */}
-        <div className="card p-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+        <div ref={scrollRef} className="card p-4 max-h-[calc(100vh-200px)] overflow-y-auto">
           <h2 className="text-sm font-semibold text-gray-400 mb-3">
             Select a Trade
           </h2>
@@ -91,38 +119,49 @@ export default function ReplayPage() {
             {trades.length === 0 ? (
               <p className="text-sm text-gray-600">No trades yet.</p>
             ) : (
-              trades.map((t) => {
-                const isActive = selected?.id === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => setSelected(t)}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                      isActive
-                        ? "bg-accent/15 text-accent-light"
-                        : "text-gray-400 hover:bg-surface-200"
-                    }`}
+              <>
+                {trades.slice(0, visibleCount).map((t) => {
+                  const isActive = selected?.id === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => setSelected(t)}
+                      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                        isActive
+                          ? "bg-accent/15 text-accent-light"
+                          : "text-gray-400 hover:bg-surface-200"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{t.ticker}</span>
+                        <span
+                          className={`text-xs ${
+                            t.outcome === "PROFIT"
+                              ? "text-profit"
+                              : t.outcome === "LOSS"
+                                ? "text-loss"
+                                : "text-gray-600"
+                          }`}
+                        >
+                          {fmtUSD(t.realizedPnl)}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-600 mt-0.5">
+                        {fmtDate(t.entryDate)} · {t.strategy || t.positionType}
+                      </div>
+                    </button>
+                  );
+                })}
+                {visibleCount < trades.length && (
+                  <div
+                    ref={sentinelRef}
+                    className="py-3 flex items-center justify-center gap-2 text-xs text-gray-600"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{t.ticker}</span>
-                      <span
-                        className={`text-xs ${
-                          t.outcome === "PROFIT"
-                            ? "text-profit"
-                            : t.outcome === "LOSS"
-                              ? "text-loss"
-                              : "text-gray-600"
-                        }`}
-                      >
-                        {fmtUSD(t.realizedPnl)}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-600 mt-0.5">
-                      {fmtDate(t.entryDate)} · {t.strategy || t.positionType}
-                    </div>
-                  </button>
-                );
-              })
+                    <span className="inline-block w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                    Loading more…
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
