@@ -24,7 +24,7 @@ type Trade = {
   aiAnalysis?: string | null;
 };
 
-type PosFilter = "ALL" | "LONG" | "SHORT";
+type PosFilter = "ALL" | "CALL" | "PUT";
 type OutcomeFilter = "ANY" | "PROFIT" | "LOSS";
 type SortKey =
   | "DATE_DESC"
@@ -97,7 +97,7 @@ export default function TrackPage() {
   const filtered = useMemo(
     () =>
       trades.filter((t) => {
-        if (posFilter !== "ALL" && t.positionType !== posFilter) return false;
+        if (posFilter !== "ALL" && (t.optionType || t.positionType) !== posFilter) return false;
         if (outcomeFilter !== "ANY" && t.outcome !== outcomeFilter) return false;
         if (tickerFilter !== "ALL" && t.ticker !== tickerFilter) return false;
         if (strategyFilter !== "ALL" && (t.strategy ?? "") !== strategyFilter)
@@ -189,9 +189,9 @@ export default function TrackPage() {
       <div className="card p-5 mb-6">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 items-end">
           <div>
-            <label id="filter-position" className="label">Position Type</label>
+            <label id="filter-position" className="label">Option Type</label>
             <div className="flex gap-2" role="group" aria-labelledby="filter-position">
-              {(["ALL", "LONG", "SHORT"] as PosFilter[]).map((k) => (
+              {(["ALL", "CALL", "PUT"] as PosFilter[]).map((k) => (
                 <button
                   key={k}
                   onClick={() => setPosFilter(k)}
@@ -201,7 +201,7 @@ export default function TrackPage() {
                       : "bg-surface-200 text-gray-400 hover:bg-surface-300"
                   }`}
                 >
-                  {k}
+                  {k === "ALL" ? "All" : k === "CALL" ? "Call" : "Put"}
                 </button>
               ))}
             </div>
