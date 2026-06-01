@@ -11,15 +11,20 @@ export async function GET() {
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  await ensureUser(userId);
+  try {
+    await ensureUser(userId);
 
-  const account = await prisma.account.upsert({
-    where: { userId },
-    update: {},
-    create: { userId, balance: 0 },
-  });
+    const account = await prisma.account.upsert({
+      where: { userId },
+      update: {},
+      create: { userId, balance: 0 },
+    });
 
-  return NextResponse.json({ balance: account.balance });
+    return NextResponse.json({ balance: account.balance });
+  } catch (err) {
+    console.error("GET /api/account error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 export async function PATCH(req: NextRequest) {
@@ -37,32 +42,37 @@ export async function PATCH(req: NextRequest) {
   if (amt < 0 && action === "set")
     return NextResponse.json({ error: "Balance cannot be negative" }, { status: 400 });
 
-  await prisma.account.upsert({
-    where: { userId },
-    update: {},
-    create: { userId, balance: 0 },
-  });
+  try {
+    await prisma.account.upsert({
+      where: { userId },
+      update: {},
+      create: { userId, balance: 0 },
+    });
 
-  let account;
-  if (action === "set") {
-    account = await prisma.account.update({
-      where: { userId },
-      data: { balance: amt },
-    });
-  } else if (action === "add") {
-    account = await prisma.account.update({
-      where: { userId },
-      data: { balance: { increment: Math.abs(amt) } },
-    });
-  } else {
-    const current = await prisma.account.findUnique({ where: { userId } });
-    if (current && current.balance < Math.abs(amt))
-      return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
-    account = await prisma.account.update({
-      where: { userId },
-      data: { balance: { decrement: Math.abs(amt) } },
-    });
+    let account;
+    if (action === "set") {
+      account = await prisma.account.update({
+        where: { userId },
+        data: { balance: amt },
+      });
+    } else if (action === "add") {
+      account = await prisma.account.update({
+        where: { userId },
+        data: { balance: { increment: Math.abs(amt) } },
+      });
+    } else {
+      const current = await prisma.account.findUnique({ where: { userId } });
+      if (current && current.balance < Math.abs(amt))
+        return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
+      account = await prisma.account.update({
+        where: { userId },
+        data: { balance: { decrement: Math.abs(amt) } },
+      });
+    }
+
+    return NextResponse.json({ balance: account.balance });
+  } catch (err) {
+    console.error("PATCH /api/account error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  return NextResponse.json({ balance: account.balance });
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,13 +17,19 @@ export async function POST() {
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { success } = await rateLimit(`backfill:${userId}`, 3, 60 * 60 * 1000);
+  if (!success)
+    return NextResponse.json({ error: "Rate limit exceeded. Try again later." }, { status: 429 });
+
+  try {
   // Find trades missing optionType
   const trades = await prisma.tradeEntry.findMany({
     where: { userId, optionType: null },
     select: { id: true, notes: true, strategy: true },
   });
 
-  let updated = 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updates: any[] = [];
 
   for (const t of trades) {
     const desc = t.notes || t.strategy || "";
@@ -54,16 +61,22 @@ export async function POST() {
       }
     }
 
-    await prisma.tradeEntry.update({
-      where: { id: t.id },
-      data: {
-        optionType,
-        strike,
-        expiry,
-        positionType: optionType === "PUT" ? "SHORT" : "LONG",
-      },
-    });
-    updated++;
+    updates.push(
+      prisma.tradeEntry.update({
+        where: { id: t.id },
+        data: {
+          optionType,
+          strike,
+          expiry,
+          positionType: optionType === "PUT" ? "SHORT" : "LONG",
+        },
+      }),
+    );
+  }
+
+  const updated = updates.length;
+  if (updated > 0) {
+    await prisma.$transaction(updates);
   }
 
   return NextResponse.json({
@@ -71,4 +84,8 @@ export async function POST() {
     updated,
     total: trades.length,
   });
+  } catch (err) {
+    console.error("POST /api/trades/backfill error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

@@ -94,6 +94,7 @@ export default function TradesPage() {
 
   /* Pagination */
   const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const nextCursorRef = useRef<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -111,7 +112,7 @@ export default function TradesPage() {
 
   const fetchTrades = useCallback(async (reset = true) => {
     try {
-      const cursor = reset ? "" : nextCursor;
+      const cursor = reset ? "" : nextCursorRef.current;
       if (!reset && !cursor) return; // no more pages
       if (!reset) setLoadingMore(true);
 
@@ -130,14 +131,16 @@ export default function TradesPage() {
       } else {
         setTrades((prev) => [...prev, ...items]);
       }
-      setNextCursor(data.nextCursor ?? null);
+      const newCursor = data.nextCursor ?? null;
+      setNextCursor(newCursor);
+      nextCursorRef.current = newCursor;
       setLoadError(null);
     } catch (err: unknown) {
       setLoadError(err instanceof Error ? err.message : "Network error");
     } finally {
       setLoadingMore(false);
     }
-  }, [nextCursor]);
+  }, []);
 
   useEffect(() => {
     if (isLoaded && user) {

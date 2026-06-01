@@ -81,11 +81,12 @@ export default function JournalPage() {
         .map((s) => s.trim())
         .filter(Boolean);
 
-      await fetch("/api/journal", {
+      const res = await fetch("/api/journal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...entry, date: selectedDate, watchlist }),
       });
+      if (!res.ok) throw new Error("Save failed");
       setSaved(true);
       fetchAllDates();
       setTimeout(() => setSaved(false), 2000);

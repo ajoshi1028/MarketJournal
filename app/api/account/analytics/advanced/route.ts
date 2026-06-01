@@ -12,6 +12,7 @@ export async function GET() {
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  try {
   const trades = await prisma.tradeEntry.findMany({
     where: { userId },
     orderBy: { entryDate: "asc" },
@@ -230,4 +231,8 @@ export async function GET() {
     pnlByWeekday,
     monthlyPerformance,
   });
+  } catch (err) {
+    console.error("GET /api/account/analytics/advanced error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
