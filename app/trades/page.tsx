@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
 
 type Fill = { qty: string; price: string };
@@ -92,6 +92,13 @@ export default function TradesPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [usage, setUsage] = useState<{ isPro: boolean; chart: { used: number; limit: number } } | null>(null);
 
+  /* Pagination */
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const PAGE_SIZE = 10;
+
   /* CSV import */
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvBroker, setCsvBroker] = useState("robinhood");
@@ -102,30 +109,64 @@ export default function TradesPage() {
   /* Active tab for input method */
   const [activeTab, setActiveTab] = useState<"csv" | "manual">("csv");
 
-  useEffect(() => {
-    if (isLoaded && user) {
-      fetchTrades();
-      fetch("/api/usage", { cache: "no-store" })
-        .then(r => r.ok ? r.json() : null)
-        .then(d => d && setUsage(d))
-        .catch(() => {});
-    }
-  }, [isLoaded, user]);
-
-  async function fetchTrades() {
+  const fetchTrades = useCallback(async (reset = true) => {
     try {
-      const res = await fetch("/api/trades", { cache: "no-store" });
+      const cursor = reset ? "" : nextCursor;
+      if (!reset && !cursor) return; // no more pages
+      if (!reset) setLoadingMore(true);
+
+      const url = `/api/trades?limit=${PAGE_SIZE}${cursor ? `&cursor=${cursor}` : ""}`;
+      const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) {
         setLoadError(`${res.status} ${res.statusText}`);
         return;
       }
       const data = await res.json();
-      setTrades(Array.isArray(data) ? data : []);
+      const items: Trade[] = data.items ?? [];
+
+      if (reset) {
+        setTrades(items);
+        if (data.total != null) setTotalCount(data.total);
+      } else {
+        setTrades((prev) => [...prev, ...items]);
+      }
+      setNextCursor(data.nextCursor ?? null);
       setLoadError(null);
     } catch (err: unknown) {
       setLoadError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setLoadingMore(false);
     }
-  }
+  }, [nextCursor]);
+
+  useEffect(() => {
+    if (isLoaded && user) {
+      fetchTrades(true);
+      fetch("/api/usage", { cache: "no-store" })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => d && setUsage(d))
+        .catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, user]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && nextCursor && !loadingMore) {
+          fetchTrades(false);
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [nextCursor, loadingMore, fetchTrades]);
+
 
   /* ── CSV Import ── */
   async function handleCsvImport(e: React.FormEvent) {
@@ -159,8 +200,8 @@ export default function TradesPage() {
       } else {
         setCsvStatus(String(body.message || "Import successful!"));
         setCsvFile(null);
-        await fetchTrades();
-      }
+        await fetchTrades(true);
+        }
     } catch {
       setCsvIsError(true);
       setCsvStatus("Network error");
@@ -249,7 +290,7 @@ export default function TradesPage() {
 
       setForm({ ...EMPTY_FORM });
       setChartFile(null);
-      await fetchTrades();
+      await fetchTrades(true);
     } catch {
       alert("Network error. Please try again.");
     } finally {
@@ -273,7 +314,8 @@ export default function TradesPage() {
         alert(`Delete failed: ${msg}`);
         return;
       }
-      await fetchTrades();
+      setTrades((prev) => prev.filter((t) => t.id !== id));
+      if (totalCount != null) setTotalCount(totalCount - 1);
     } catch {
       alert("Network error while deleting.");
     } finally {
@@ -581,8 +623,8 @@ export default function TradesPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">
               Recent Trades
-              {trades.length > 0 && (
-                <span className="text-sm font-normal text-gray-500 ml-2">({trades.length})</span>
+              {totalCount != null && totalCount > 0 && (
+                <span className="text-sm font-normal text-gray-500 ml-2">({totalCount})</span>
               )}
             </h2>
           </div>
@@ -595,14 +637,26 @@ export default function TradesPage() {
                 </p>
               </div>
             ) : (
-              trades.map((t) => (
-                <TradeCard
-                  key={t.id}
-                  trade={t}
-                  deleting={deletingId === t.id}
-                  onDelete={handleDelete}
-                />
-              ))
+              <>
+                {trades.map((t) => (
+                  <TradeCard
+                    key={t.id}
+                    trade={t}
+                    deleting={deletingId === t.id}
+                    onDelete={handleDelete}
+                  />
+                ))}
+                {/* Infinite scroll sentinel */}
+                <div ref={sentinelRef} className="h-1" />
+                {loadingMore && (
+                  <div className="flex justify-center py-4">
+                    <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+                {!nextCursor && trades.length > 0 && (
+                  <p className="text-center text-xs text-gray-600 py-2">All trades loaded</p>
+                )}
+              </>
             )}
           </div>
         </div>

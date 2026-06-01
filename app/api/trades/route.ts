@@ -58,11 +58,37 @@ function sanitizeString(val: unknown, maxLen: number): string {
     .slice(0, maxLen);
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const { userId } = await auth();
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const url = new URL(req.url);
+  const cursor = url.searchParams.get("cursor");
+  const limitParam = url.searchParams.get("limit");
+
+  // Paginated mode: when limit is explicitly set
+  if (limitParam) {
+    const limit = Math.min(Math.max(parseInt(limitParam, 10) || 10, 1), 100);
+    const [trades, total] = await Promise.all([
+      prisma.tradeEntry.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: limit + 1,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      }),
+      // Only count on first page (no cursor) to avoid extra query on scroll
+      cursor ? Promise.resolve(null) : prisma.tradeEntry.count({ where: { userId } }),
+    ]);
+
+    const hasMore = trades.length > limit;
+    const items = hasMore ? trades.slice(0, limit) : trades;
+    const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+    return NextResponse.json({ items, nextCursor, ...(total != null ? { total } : {}) });
+  }
+
+  // Legacy mode: return all trades as array (for Dashboard, Track, etc.)
   const trades = await prisma.tradeEntry.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
