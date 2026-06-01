@@ -63,38 +63,42 @@ export async function GET(req: NextRequest) {
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const url = new URL(req.url);
-  const cursor = url.searchParams.get("cursor");
-  const limitParam = url.searchParams.get("limit");
+  try {
+    const url = new URL(req.url);
+    const cursor = url.searchParams.get("cursor");
+    const limitParam = url.searchParams.get("limit");
 
-  // Paginated mode: when limit is explicitly set
-  if (limitParam) {
-    const limit = Math.min(Math.max(parseInt(limitParam, 10) || 10, 1), 100);
-    const [trades, total] = await Promise.all([
-      prisma.tradeEntry.findMany({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-        take: limit + 1,
-        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      }),
-      // Only count on first page (no cursor) to avoid extra query on scroll
-      cursor ? Promise.resolve(null) : prisma.tradeEntry.count({ where: { userId } }),
-    ]);
+    // Paginated mode: when limit is explicitly set
+    if (limitParam) {
+      const limit = Math.min(Math.max(parseInt(limitParam, 10) || 10, 1), 100);
+      const [trades, total] = await Promise.all([
+        prisma.tradeEntry.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: limit + 1,
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        }),
+        cursor ? Promise.resolve(null) : prisma.tradeEntry.count({ where: { userId } }),
+      ]);
 
-    const hasMore = trades.length > limit;
-    const items = hasMore ? trades.slice(0, limit) : trades;
-    const nextCursor = hasMore ? items[items.length - 1].id : null;
+      const hasMore = trades.length > limit;
+      const items = hasMore ? trades.slice(0, limit) : trades;
+      const nextCursor = hasMore ? items[items.length - 1].id : null;
 
-    return NextResponse.json({ items, nextCursor, ...(total != null ? { total } : {}) });
+      return NextResponse.json({ items, nextCursor, ...(total != null ? { total } : {}) });
+    }
+
+    // Legacy mode: return all trades as array (for Dashboard, Track, etc.)
+    const trades = await prisma.tradeEntry.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(trades);
+  } catch (err) {
+    console.error("GET /api/trades error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  // Legacy mode: return all trades as array (for Dashboard, Track, etc.)
-  const trades = await prisma.tradeEntry.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return NextResponse.json(trades);
 }
 
 export async function POST(req: NextRequest) {
@@ -192,50 +196,55 @@ export async function POST(req: NextRequest) {
   if (realizedPnl > 0) outcome = "PROFIT";
   else if (realizedPnl < 0) outcome = "LOSS";
 
-  let trade = await prisma.tradeEntry.create({
-    data: {
-      userId,
-      ticker,
-      strategy,
-      positionType,
-      optionType: optionType && ["CALL", "PUT"].includes(optionType) ? optionType : null,
-      strike: strike && Number.isFinite(strike) ? strike : null,
-      expiry: expiry && !isNaN(expiry.getTime()) ? expiry : null,
-      entryDate: parsedEntry,
-      entryTime,
-      sellDate: parsedSell,
-      exitTime,
-      buyFills: buys.length ? buys : undefined,
-      sellFills: sells.length ? sells : undefined,
-      totalBuyQty,
-      totalSellQty,
-      avgBuyPrice: avgBuy,
-      avgSellPrice: avgSell,
-      realizedPnl,
-      outcome,
-      notes,
-    },
-  });
-
-  if (chartFile && process.env.S3_BUCKET_NAME) {
-    const bytes = Buffer.from(await chartFile.arrayBuffer());
-    const ext = (chartFile.type.split("/")[1] || "png").toLowerCase();
-    const key = `users/${userId}/charts/${trade.id}-${crypto.randomUUID()}.${ext}`;
-
-    const url = await putPublicObject({
-      bucket: process.env.S3_BUCKET_NAME,
-      key,
-      contentType: chartFile.type,
-      body: bytes,
+  try {
+    let trade = await prisma.tradeEntry.create({
+      data: {
+        userId,
+        ticker,
+        strategy,
+        positionType,
+        optionType: optionType && ["CALL", "PUT"].includes(optionType) ? optionType : null,
+        strike: strike && Number.isFinite(strike) ? strike : null,
+        expiry: expiry && !isNaN(expiry.getTime()) ? expiry : null,
+        entryDate: parsedEntry,
+        entryTime,
+        sellDate: parsedSell,
+        exitTime,
+        buyFills: buys.length ? buys : undefined,
+        sellFills: sells.length ? sells : undefined,
+        totalBuyQty,
+        totalSellQty,
+        avgBuyPrice: avgBuy,
+        avgSellPrice: avgSell,
+        realizedPnl,
+        outcome,
+        notes,
+      },
     });
 
-    trade = await prisma.tradeEntry.update({
-      where: { id: trade.id },
-      data: { chartUrl: url },
-    });
+    if (chartFile && process.env.S3_BUCKET_NAME) {
+      const bytes = Buffer.from(await chartFile.arrayBuffer());
+      const ext = (chartFile.type.split("/")[1] || "png").toLowerCase();
+      const key = `users/${userId}/charts/${trade.id}-${crypto.randomUUID()}.${ext}`;
+
+      const url = await putPublicObject({
+        bucket: process.env.S3_BUCKET_NAME,
+        key,
+        contentType: chartFile.type,
+        body: bytes,
+      });
+
+      trade = await prisma.tradeEntry.update({
+        where: { id: trade.id },
+        data: { chartUrl: url },
+      });
+    }
+
+    return NextResponse.json(trade, { status: 201 });
+  } catch (err) {
+    console.error("POST /api/trades error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  return NextResponse.json(trade, { status: 201 });
 }
 
 export async function DELETE(req: NextRequest) {
@@ -243,24 +252,29 @@ export async function DELETE(req: NextRequest) {
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { searchParams } = new URL(req.url);
-  const tradeId = searchParams.get("id");
-  const clearAll = searchParams.get("all");
+  try {
+    const { searchParams } = new URL(req.url);
+    const tradeId = searchParams.get("id");
+    const clearAll = searchParams.get("all");
 
-  if (clearAll === "true") {
-    const result = await prisma.tradeEntry.deleteMany({ where: { userId } });
-    return NextResponse.json({ message: "Deleted", count: result.count });
+    if (clearAll === "true") {
+      const result = await prisma.tradeEntry.deleteMany({ where: { userId } });
+      return NextResponse.json({ message: "Deleted", count: result.count });
+    }
+
+    if (!tradeId)
+      return NextResponse.json({ error: "Trade ID required" }, { status: 400 });
+
+    const trade = await prisma.tradeEntry.findUnique({
+      where: { id: tradeId },
+    });
+    if (!trade || trade.userId !== userId)
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    await prisma.tradeEntry.delete({ where: { id: tradeId } });
+    return NextResponse.json({ message: "Deleted" });
+  } catch (err) {
+    console.error("DELETE /api/trades error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  if (!tradeId)
-    return NextResponse.json({ error: "Trade ID required" }, { status: 400 });
-
-  const trade = await prisma.tradeEntry.findUnique({
-    where: { id: tradeId },
-  });
-  if (!trade || trade.userId !== userId)
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-
-  await prisma.tradeEntry.delete({ where: { id: tradeId } });
-  return NextResponse.json({ message: "Deleted" });
 }

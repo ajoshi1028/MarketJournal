@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  try {
   const { searchParams } = new URL(req.url);
   const rawBucket = searchParams.get("bucket") || "month";
   const bucket: Bucket = VALID_BUCKETS.has(rawBucket)
@@ -107,4 +108,8 @@ export async function GET(req: NextRequest) {
       losses: lossesLong + lossesShort,
     },
   });
+  } catch (err) {
+    console.error("GET /api/account/analytics error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

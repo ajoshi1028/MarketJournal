@@ -317,6 +317,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const allowedMimes = new Set(["text/csv", "text/plain", "application/vnd.ms-excel", "application/octet-stream"]);
+    if (file.type && !allowedMimes.has(file.type)) {
+      return NextResponse.json(
+        { error: "Invalid file type. Please upload a CSV file." },
+        { status: 400 }
+      );
+    }
+
     const csvText = await file.text();
 
     const parsed = Papa.parse(csvText, {
