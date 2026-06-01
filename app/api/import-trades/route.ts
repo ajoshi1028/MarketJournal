@@ -422,6 +422,35 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Parse option details from description like "QQQ 5/21/2026 Put $712.00"
+    function parseOptionFromDesc(desc: string | null): {
+      optionType: "CALL" | "PUT" | null;
+      strike: number | null;
+      expiry: Date | null;
+    } {
+      if (!desc) return { optionType: null, strike: null, expiry: null };
+      const callMatch = /\bCall\b/i.test(desc);
+      const putMatch = /\bPut\b/i.test(desc);
+      const optionType = callMatch ? "CALL" as const : putMatch ? "PUT" as const : null;
+
+      // Try to extract strike price (number after Call/Put, or $ prefixed)
+      let strike: number | null = null;
+      const strikeMatch = desc.match(/(?:Call|Put)\s+\$?([\d,]+(?:\.\d+)?)/i);
+      if (strikeMatch) {
+        strike = parseFloat(strikeMatch[1].replace(/,/g, ""));
+        if (!Number.isFinite(strike)) strike = null;
+      }
+
+      // Try to extract expiry date from description
+      const dateMatch = desc.match(/(\d{1,2}\/\d{1,2}\/\d{2,4})/);
+      let expiry: Date | null = null;
+      if (dateMatch) {
+        expiry = parseDate(dateMatch[1]);
+      }
+
+      return { optionType, strike, expiry };
+    }
+
     const tradesToCreate: any[] = [];
 
     for (const g of groups.values()) {
@@ -438,14 +467,19 @@ export async function POST(req: NextRequest) {
       if (realizedPnl > 0) outcome = "PROFIT";
       else if (realizedPnl < 0) outcome = "LOSS";
 
+      const { optionType, strike, expiry } = parseOptionFromDesc(g.description);
+
       const positionType: "LONG" | "SHORT" =
-        totalBuyQty >= totalSellQty ? "LONG" : "SHORT";
+        optionType === "PUT" ? "SHORT" : "LONG";
 
       tradesToCreate.push({
         userId,
         ticker: g.ticker,
         strategy: g.description?.slice(0, 80) ?? null,
         positionType,
+        optionType,
+        strike,
+        expiry,
         entryDate: g.firstBuyDate ?? g.lastSellDate ?? new Date(),
         sellDate: g.lastSellDate ?? g.firstBuyDate ?? null,
         buyFills: g.buys.length ? g.buys : undefined,
