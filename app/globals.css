@@ -64,51 +64,64 @@
 }
 
 @layer components {
+  /* Editorial / terminal aesthetic: sharp corners, hairline borders,
+     monospace metadata. Shared across every page. */
   .card {
-    @apply bg-surface-100 border border-surface-300 rounded-xl shadow-card;
+    @apply bg-surface-100 border border-surface-300;
+  }
+
+  /* Terminal-style panel header bar — pair with .card */
+  .panel-head {
+    @apply flex items-center justify-between border-b border-surface-300 px-4 py-2.5
+           font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500;
+  }
+
+  /* Monospace section kicker / eyebrow */
+  .kicker {
+    @apply font-mono text-[11px] uppercase tracking-[0.25em] text-gray-500;
   }
 
   .input-field {
-    @apply w-full bg-surface-200 border border-surface-400 rounded-lg px-3.5 py-2.5 text-sm
+    @apply w-full bg-surface-200 border border-surface-400 px-3.5 py-2.5 text-sm
            text-gray-100 placeholder-gray-500
-           focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent
+           focus:outline-none focus:ring-1 focus:ring-accent/50 focus:border-accent
            transition-colors;
   }
 
   .btn-primary {
-    @apply bg-accent hover:bg-accent-dark active:bg-indigo-700
-           text-white text-sm font-medium px-5 py-2.5 rounded-lg
+    @apply bg-white hover:bg-accent-light active:bg-accent
+           text-surface text-sm font-medium px-5 py-2.5
            transition-colors duration-150
-           focus:outline-none focus:ring-2 focus:ring-accent/40 focus:ring-offset-2 focus:ring-offset-surface;
+           focus:outline-none focus:ring-1 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-surface;
   }
 
   .btn-ghost {
-    @apply text-gray-400 hover:text-gray-200 hover:bg-surface-300
-           px-3 py-2 rounded-lg text-sm transition-colors;
+    @apply text-gray-400 hover:text-gray-100 hover:bg-surface-300
+           px-3 py-2 text-sm transition-colors;
   }
 
   .btn-danger {
-    @apply bg-red-600/15 text-red-400 hover:bg-red-600/25 hover:text-red-300
-           px-3 py-1.5 rounded-lg text-sm font-medium transition-colors;
+    @apply border border-red-500/30 text-red-400 hover:bg-red-600/15 hover:text-red-300
+           px-3 py-1.5 text-sm font-medium transition-colors;
   }
 
   .badge {
-    @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium;
+    @apply inline-flex items-center px-2.5 py-1 text-xs font-medium;
   }
 
   .label {
-    @apply block text-sm text-gray-400 mb-1.5;
+    @apply block font-mono text-[11px] uppercase tracking-wider text-gray-500 mb-1.5;
   }
 
   .nav-link {
-    @apply text-gray-400 hover:text-gray-100 text-sm font-medium px-3 py-1.5 rounded-md
+    @apply text-gray-400 hover:text-gray-100 text-sm font-medium px-3 py-1.5
            transition-colors hover:bg-surface-200
-           focus:outline-none focus:ring-2 focus:ring-accent/40;
+           focus:outline-none focus:ring-1 focus:ring-accent/50;
   }
 
   /* Skip navigation link for keyboard users */
   .skip-nav {
-    @apply absolute -top-10 left-4 z-[100] bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium
+    @apply absolute -top-10 left-4 z-[100] bg-accent text-white px-4 py-2 text-sm font-medium
            transition-all focus:top-4;
   }
 }

@@ -181,7 +181,7 @@ export default function CoachingPage() {
                     key={day}
                     onClick={() => hasReport && handleSelectDate(dateStr)}
                     disabled={!hasReport}
-                    className={`aspect-square flex items-center justify-center text-xs rounded-lg transition-colors relative ${
+                    className={`aspect-square flex items-center justify-center text-xs transition-colors relative ${
                       isSelected ? "bg-accent text-white font-bold"
                         : hasReport ? "bg-accent/15 text-accent-light font-medium hover:bg-accent/25 cursor-pointer"
                         : isToday ? "text-white bg-surface-300"

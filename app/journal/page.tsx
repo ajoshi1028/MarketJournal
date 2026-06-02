@@ -153,7 +153,7 @@ export default function JournalPage() {
                   <button
                     key={day}
                     onClick={() => setSelectedDate(dateStr)}
-                    className={`aspect-square flex items-center justify-center text-xs rounded-lg transition-colors relative cursor-pointer ${
+                    className={`aspect-square flex items-center justify-center text-xs transition-colors relative cursor-pointer ${
                       isSelected ? "bg-accent text-white font-bold"
                         : hasEntry ? "bg-accent/15 text-accent-light font-medium hover:bg-accent/25"
                         : isToday ? "text-white bg-surface-300 hover:bg-surface-400"
@@ -195,7 +195,7 @@ export default function JournalPage() {
                       key={b}
                       type="button"
                       onClick={() => setField("marketBias", b)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${
+                      className={`px-3 py-1.5 text-sm font-medium capitalize transition-colors ${
                         entry.marketBias === b
                           ? b === "bullish"
                             ? "bg-profit/20 text-profit"
@@ -297,7 +297,7 @@ export default function JournalPage() {
                       onClick={() => setField("mood", n)}
                       aria-label={`Mood ${n}`}
                       aria-pressed={entry.mood === n}
-                      className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
+                      className={`w-9 h-9 text-sm font-medium transition-colors ${
                         entry.mood === n
                           ? "bg-accent text-white"
                           : "bg-surface-200 text-gray-400 hover:bg-surface-300"
@@ -318,7 +318,7 @@ export default function JournalPage() {
                       onClick={() => setField("confidence", n)}
                       aria-label={`Confidence ${n}`}
                       aria-pressed={entry.confidence === n}
-                      className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
+                      className={`w-9 h-9 text-sm font-medium transition-colors ${
                         entry.confidence === n
                           ? "bg-accent text-white"
                           : "bg-surface-200 text-gray-400 hover:bg-surface-300"
@@ -339,7 +339,7 @@ export default function JournalPage() {
                       onClick={() => setField("grade", g)}
                       aria-label={`Grade ${g}`}
                       aria-pressed={entry.grade === g}
-                      className={`w-9 h-9 rounded-lg text-sm font-bold transition-colors ${
+                      className={`w-9 h-9 text-sm font-bold transition-colors ${
                         entry.grade === g
                           ? g <= "B"
                             ? "bg-profit/20 text-profit"

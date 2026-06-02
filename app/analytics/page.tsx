@@ -83,7 +83,7 @@ export default function AnalyticsPage() {
   if (error)
     return (
       <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="rounded-lg border border-red-500/30 bg-loss-muted px-4 py-3 text-red-400 text-sm">{error}</div>
+        <div className="border border-red-500/30 bg-loss-muted px-4 py-3 text-red-400 text-sm">{error}</div>
       </main>
     );
   if (!data)

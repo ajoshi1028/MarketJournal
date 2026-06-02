@@ -63,7 +63,7 @@ export default function NavBar() {
                 <Link
                   key={l.href}
                   href={l.href}
-                  className={`nav-link text-sm ${
+                  className={`nav-link font-mono text-xs uppercase tracking-wider ${
                     pathname === l.href ? "text-accent-light" : ""
                   }`}
                 >
@@ -75,7 +75,7 @@ export default function NavBar() {
               <div ref={toolsRef} className="relative">
                 <button
                   onClick={() => setToolsOpen(!toolsOpen)}
-                  className={`nav-link text-sm inline-flex items-center gap-1 ${
+                  className={`nav-link font-mono text-xs uppercase tracking-wider inline-flex items-center gap-1 ${
                     isToolsActive ? "text-accent-light" : ""
                   }`}
                   aria-expanded={toolsOpen}
@@ -94,7 +94,7 @@ export default function NavBar() {
                 </button>
 
                 {toolsOpen && (
-                  <div className="absolute top-full left-0 mt-1 w-56 rounded-xl bg-surface-100 border border-surface-300 shadow-xl shadow-black/30 py-1.5 z-50">
+                  <div className="absolute top-full left-0 mt-1 w-56 bg-surface-100 border border-surface-300 shadow-xl shadow-black/30 py-1.5 z-50">
                     {TOOLS_LINKS.map((l) => (
                       <Link
                         key={l.href}
@@ -184,7 +184,7 @@ export default function NavBar() {
                   key={l.href}
                   href={l.href}
                   onClick={() => setOpen(false)}
-                  className={`px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                  className={`px-3 py-2.5 text-sm transition-colors ${
                     pathname === l.href
                       ? "bg-accent/15 text-accent-light"
                       : "text-gray-400 hover:bg-surface-200 hover:text-gray-200"
@@ -201,7 +201,7 @@ export default function NavBar() {
                     key={l.href}
                     href={l.href}
                     onClick={() => setOpen(false)}
-                    className={`px-3 py-2.5 rounded-lg text-sm transition-colors block ${
+                    className={`px-3 py-2.5 text-sm transition-colors block ${
                       pathname === l.href
                         ? "bg-accent/15 text-accent-light"
                         : "text-gray-400 hover:bg-surface-200 hover:text-gray-200"

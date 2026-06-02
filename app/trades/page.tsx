@@ -339,7 +339,7 @@ export default function TradesPage() {
       </div>
 
       {loadError && (
-        <div className="mb-6 rounded-lg border border-red-500/30 bg-loss-muted px-4 py-3 text-red-400 text-sm">
+        <div className="mb-6 border border-red-500/30 bg-loss-muted px-4 py-3 text-red-400 text-sm">
           Failed to load trades: {loadError}
         </div>
       )}
@@ -381,7 +381,7 @@ export default function TradesPage() {
           {activeTab === "csv" && (
             <div className="card rounded-t-none border-t-0 p-5">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <div className="w-8 h-8 bg-blue-500/10 flex items-center justify-center">
                   <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                   </svg>
@@ -414,7 +414,7 @@ export default function TradesPage() {
                     accept=".csv,text/csv"
                     onChange={(e) => setCsvFile(e.target.files?.[0] ?? null)}
                     className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4
-                               file:rounded-lg file:border-0 file:text-sm file:font-medium
+                               file:border-0 file:text-sm file:font-medium
                                file:bg-surface-300 file:text-gray-200 hover:file:bg-surface-400
                                file:cursor-pointer file:transition-colors"
                   />
@@ -594,7 +594,7 @@ export default function TradesPage() {
                   accept="image/*"
                   onChange={(e) => setChartFile(e.target.files?.[0] ?? null)}
                   className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4
-                             file:rounded-lg file:border-0 file:text-sm file:font-medium
+                             file:border-0 file:text-sm file:font-medium
                              file:bg-surface-300 file:text-gray-200 hover:file:bg-surface-400
                              file:cursor-pointer file:transition-colors"
                 />
@@ -769,7 +769,7 @@ function TradeCard({
       : "bg-loss/15 text-loss";
 
   return (
-    <div className={`p-4 rounded-xl border ${borderColor} ${bgTint}`}>
+    <div className={`p-4 border ${borderColor} ${bgTint}`}>
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center gap-2 flex-wrap">
           <h3 className="font-semibold text-white text-lg">{t.ticker}</h3>
@@ -817,7 +817,7 @@ function TradeCard({
       </div>
 
       {t.aiAnalysis && (
-        <div className="mt-3 p-3 rounded-lg bg-surface-200/50 border border-surface-300">
+        <div className="mt-3 p-3 bg-surface-200/50 border border-surface-300">
           <p className="text-xs font-semibold text-accent-light mb-1">
             AI Analysis
           </p>
