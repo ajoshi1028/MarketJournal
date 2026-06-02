@@ -220,7 +220,7 @@ export default function TrackPage() {
       </div>
 
       {loadError && (
-        <div className="mb-4 rounded-lg border border-red-500/30 bg-loss-muted px-4 py-3 text-red-400 text-sm">
+        <div className="mb-4 border border-red-500/30 bg-loss-muted px-4 py-3 text-red-400 text-sm">
           Failed to load trades: {loadError}
         </div>
       )}
@@ -235,7 +235,7 @@ export default function TrackPage() {
                 <button
                   key={k}
                   onClick={() => setPosFilter(k)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                     posFilter === k
                       ? "bg-accent text-white"
                       : "bg-surface-200 text-gray-400 hover:bg-surface-300"
@@ -254,7 +254,7 @@ export default function TrackPage() {
                 <button
                   key={k}
                   onClick={() => setOutcomeFilter(k)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                     outcomeFilter === k
                       ? "bg-accent text-white"
                       : "bg-surface-200 text-gray-400 hover:bg-surface-300"
@@ -363,7 +363,7 @@ export default function TrackPage() {
               <button
                 onClick={clearAllTrades}
                 disabled={clearing}
-                className="bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                className="bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 transition-colors disabled:opacity-50"
               >
                 {clearing ? "Deleting..." : "Delete All"}
               </button>
@@ -426,7 +426,7 @@ function TradeRow({
   }
 
   return (
-    <div className={`rounded-xl border ${borderColor} ${bgTint}`}>
+    <div className={`border ${borderColor} ${bgTint}`}>
       {/* Compact row — always visible */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -485,7 +485,7 @@ function TradeRow({
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                 aria-label={`Upload chart image for ${t.ticker}`}
                 className="text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3
-                           file:rounded-lg file:border-0 file:text-sm file:font-medium
+                           file:border-0 file:text-sm file:font-medium
                            file:bg-surface-300 file:text-gray-200 hover:file:bg-surface-400
                            file:cursor-pointer file:transition-colors"
               />
@@ -510,7 +510,7 @@ function TradeRow({
 
             {/* AI result */}
             {t.aiAnalysis && (
-              <div className="p-4 rounded-lg bg-surface-200/50 border border-surface-300">
+              <div className="p-4 bg-surface-200/50 border border-surface-300">
                 <p className="text-xs font-semibold text-accent-light mb-1.5">
                   AI Analysis
                 </p>

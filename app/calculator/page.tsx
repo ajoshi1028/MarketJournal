@@ -114,7 +114,7 @@ export default function CalculatorPage() {
         {hasInput && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="rounded-xl bg-surface-200 border border-surface-300 p-4">
+              <div className="bg-surface-200 border border-surface-300 p-4">
                 <h3 className="text-sm font-semibold text-gray-400 mb-3">
                   Target Prices
                 </h3>
@@ -132,7 +132,7 @@ export default function CalculatorPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl bg-surface-200 border border-surface-300 p-4">
+              <div className="bg-surface-200 border border-surface-300 p-4">
                 <h3 className="text-sm font-semibold text-gray-400 mb-3">
                   Profit / Loss
                 </h3>

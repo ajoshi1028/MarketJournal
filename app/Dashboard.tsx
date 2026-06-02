@@ -147,15 +147,15 @@ export default function Dashboard() {
     return (
       <div className="max-w-7xl mx-auto px-6 py-10">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-surface-200 rounded w-48" />
-          <div className="grid grid-cols-4 gap-4">
+          <div className="h-8 bg-surface-200 w-48" />
+          <div className="grid grid-cols-4 border border-surface-300 divide-x divide-surface-300">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 bg-surface-200 rounded-xl" />
+              <div key={i} className="h-24 bg-surface-200" />
             ))}
           </div>
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="h-64 bg-surface-200 rounded-xl" />
-            <div className="h-64 bg-surface-200 rounded-xl" />
+            <div className="h-64 bg-surface-200" />
+            <div className="h-64 bg-surface-200" />
           </div>
         </div>
       </div>
@@ -172,10 +172,11 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
       {/* Header */}
-      <div className="mb-8 flex items-end justify-between">
+      <div className="mb-8 flex items-end justify-between border-b border-surface-300 pb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-white mb-1">Dashboard</h1>
-          <p className="text-gray-500 text-sm">
+          <p className="kicker mb-3">Workspace</p>
+          <h1 className="text-3xl md:text-4xl font-light tracking-tight text-white">Dashboard</h1>
+          <p className="font-mono text-xs text-gray-500 mt-3">
             {s.totalTrades > 0
               ? `${s.totalTrades} trades logged · ${formatPercent(s.winRate)} win rate`
               : "Start logging trades to see your stats here."}
@@ -183,8 +184,8 @@ export default function Dashboard() {
         </div>
         {balance > 0 && (
           <Link href="/account" className="text-right group">
-            <p className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors">Account balance</p>
-            <p className="text-lg font-semibold text-white">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 group-hover:text-gray-400 transition-colors mb-1">Account balance</p>
+            <p className="text-lg font-mono font-bold text-white">
               ${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </p>
           </Link>
@@ -192,42 +193,27 @@ export default function Dashboard() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <Link href="/analytics" className="card px-4 py-3.5 hover:border-surface-400 transition-colors">
-          <p className="text-xs text-gray-500 mb-1">Net P&L</p>
-          <p className={`text-xl font-semibold ${s.netPnl >= 0 ? "text-profit" : "text-loss"}`}>
-            {s.totalTrades > 0 ? formatPnl(s.netPnl) : "—"}
-          </p>
-        </Link>
-        <Link href="/analytics" className="card px-4 py-3.5 hover:border-surface-400 transition-colors">
-          <p className="text-xs text-gray-500 mb-1">Win Rate</p>
-          <p className="text-xl font-semibold text-white">
-            {s.totalTrades > 0 ? formatPercent(s.winRate) : "—"}
-          </p>
-        </Link>
-        <Link href="/analytics" className="card px-4 py-3.5 hover:border-surface-400 transition-colors">
-          <p className="text-xs text-gray-500 mb-1">Profit Factor</p>
-          <p className="text-xl font-semibold text-white">
-            {s.totalTrades > 0 && s.profitFactor > 0 ? s.profitFactor.toFixed(2) : "—"}
-          </p>
-        </Link>
-        <Link href="/analytics" className="card px-4 py-3.5 hover:border-surface-400 transition-colors">
-          <p className="text-xs text-gray-500 mb-1">
-            {s.currentStreak >= 0 ? "Win Streak" : "Loss Streak"}
-          </p>
-          <p className={`text-xl font-semibold ${s.currentStreak >= 0 ? "text-profit" : "text-loss"}`}>
-            {s.totalTrades > 0 ? `${Math.abs(s.currentStreak)}` : "—"}
-          </p>
-        </Link>
+      <div className="grid grid-cols-2 sm:grid-cols-4 border border-surface-300 divide-x divide-y sm:divide-y-0 divide-surface-300 mb-6">
+        {[
+          { label: "Net P&L", value: s.totalTrades > 0 ? formatPnl(s.netPnl) : "—", color: s.netPnl >= 0 ? "text-profit" : "text-loss" },
+          { label: "Win Rate", value: s.totalTrades > 0 ? formatPercent(s.winRate) : "—", color: "text-white" },
+          { label: "Profit Factor", value: s.totalTrades > 0 && s.profitFactor > 0 ? s.profitFactor.toFixed(2) : "—", color: "text-white" },
+          { label: s.currentStreak >= 0 ? "Win Streak" : "Loss Streak", value: s.totalTrades > 0 ? `${Math.abs(s.currentStreak)}` : "—", color: s.currentStreak >= 0 ? "text-profit" : "text-loss" },
+        ].map((stat) => (
+          <Link key={stat.label} href="/analytics" className="px-4 py-4 hover:bg-surface-200/40 transition-colors">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 mb-1.5">{stat.label}</p>
+            <p className={`text-xl font-mono font-bold ${stat.color}`}>{stat.value}</p>
+          </Link>
+        ))}
       </div>
 
       <div className="grid md:grid-cols-2 gap-4 mb-4">
         {/* Recent trades */}
         <div className="card">
-          <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-            <h2 className="text-sm font-medium text-white">Recent Trades</h2>
-            <Link href="/trades" className="text-xs text-accent-light hover:underline">
-              Log trade →
+          <div className="panel-head">
+            <span>Recent Trades</span>
+            <Link href="/trades" className="text-accent-light hover:text-accent transition-colors normal-case tracking-normal">
+              log →
             </Link>
           </div>
           {recentTrades.length > 0 ? (
@@ -236,7 +222,7 @@ export default function Dashboard() {
                 <div key={t.id} className="px-4 py-2.5 flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      className={`w-1.5 h-1.5 shrink-0 ${
                         t.outcome === "PROFIT" ? "bg-profit" : t.outcome === "LOSS" ? "bg-loss" : "bg-gray-600"
                       }`}
                     />
@@ -290,13 +276,13 @@ export default function Dashboard() {
 
         {/* Today's journal */}
         <div className="card">
-          <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-            <h2 className="text-sm font-medium text-white">Today&apos;s Journal</h2>
-            <Link href="/journal" className="text-xs text-accent-light hover:underline">
-              {journal ? "Edit →" : "Write →"}
+          <div className="panel-head">
+            <span>Today&apos;s Journal</span>
+            <Link href="/journal" className="text-accent-light hover:text-accent transition-colors normal-case tracking-normal">
+              {journal ? "edit →" : "write →"}
             </Link>
           </div>
-          <div className="px-4 pb-4">
+          <div className="px-4 py-4">
             {journal ? (
               <div className="space-y-3">
                 {journal.premarketPlan && (
@@ -354,122 +340,75 @@ export default function Dashboard() {
       </div>
 
       {/* Tools & Features */}
-      <div className="mb-3 mt-2">
-        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Tools</h2>
+      <div className="mb-3 mt-2 flex items-center gap-3">
+        <span className="kicker">Tools</span>
+        <span className="h-px flex-1 bg-surface-300" />
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-        {/* AI Coach — featured card */}
-        <Link href="/coaching" className="group relative col-span-2 lg:col-span-1 rounded-xl border border-purple-500/20 bg-gradient-to-br from-purple-500/10 via-surface-100 to-surface-100 p-5 hover:border-purple-500/40 transition-all overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl -translate-y-8 translate-x-8" />
-          <div className="relative">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center mb-4">
-              <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-              </svg>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 border-t border-l border-surface-300">
+        {[
+          {
+            href: "/coaching",
+            no: "01",
+            title: "AI Coach",
+            desc: hasCoachingToday
+              ? "Today's report is ready"
+              : totalCoachingReports > 0
+                ? `${totalCoachingReports} report${totalCoachingReports !== 1 ? "s" : ""} generated · get today's`
+                : "Personalized coaching from your trades",
+            cta: "open coach",
+            accent: hasCoachingToday,
+          },
+          {
+            href: "/replay",
+            no: "02",
+            title: "Trade Replay",
+            desc: s.totalTrades > 0 ? `Review ${s.totalTrades} trades with live charts` : "Replay trades with TradingView charts",
+            cta: "launch replay",
+          },
+          {
+            href: "/calculator",
+            no: "03",
+            title: "Risk Calculator",
+            desc: "Position sizing & risk-reward ratios",
+            cta: "calculate",
+          },
+          {
+            href: "/reports",
+            no: "04",
+            title: "PDF Reports",
+            desc: "Downloadable trade reports",
+            cta: "generate",
+          },
+          {
+            href: "/trades",
+            no: "05",
+            title: "CSV Import",
+            desc: "Sync trades from your broker",
+            cta: "import",
+          },
+          {
+            href: "/billing",
+            no: "06",
+            title: "Billing",
+            desc: isPro ? "Pro plan active" : "Free plan · upgrade",
+            cta: "manage",
+          },
+        ].map((tool) => (
+          <Link
+            key={tool.href}
+            href={tool.href}
+            className="group border-b border-r border-surface-300 p-5 hover:bg-surface-200/40 transition-colors"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <span className="font-mono text-xs text-gray-600 group-hover:text-accent-light transition-colors">{tool.no}</span>
+              <span className="font-mono text-[10px] uppercase tracking-wider text-gray-600 group-hover:text-gray-400 transition-colors">
+                {tool.cta} →
+              </span>
             </div>
-            <h3 className="text-base font-semibold text-white mb-1">AI Coach</h3>
-            {hasCoachingToday ? (
-              <p className="text-sm text-profit">Today&apos;s report is ready</p>
-            ) : totalCoachingReports > 0 ? (
-              <p className="text-sm text-gray-400">
-                {totalCoachingReports} report{totalCoachingReports !== 1 && "s"} generated · <span className="text-purple-400">Get today&apos;s</span>
-              </p>
-            ) : (
-              <p className="text-sm text-gray-400">Personalized coaching from your trades</p>
-            )}
-            <span className="inline-flex items-center gap-1 text-xs text-purple-400 mt-3 group-hover:gap-2 transition-all">
-              Open coach <span>→</span>
-            </span>
-          </div>
-        </Link>
-
-        {/* Trade Replay */}
-        <Link href="/replay" className="group relative rounded-xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 via-surface-100 to-surface-100 p-5 hover:border-cyan-500/40 transition-all overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-2xl -translate-y-6 translate-x-6" />
-          <div className="relative">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/15 flex items-center justify-center mb-4">
-              <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
-              </svg>
-            </div>
-            <h3 className="text-base font-semibold text-white mb-1">Trade Replay</h3>
-            <p className="text-sm text-gray-400">
-              {s.totalTrades > 0
-                ? `Review ${s.totalTrades} trades with live charts`
-                : "Replay trades with TradingView charts"}
-            </p>
-            <span className="inline-flex items-center gap-1 text-xs text-cyan-400 mt-3 group-hover:gap-2 transition-all">
-              Launch replay <span>→</span>
-            </span>
-          </div>
-        </Link>
-
-        {/* Risk Calculator */}
-        <Link href="/calculator" className="group relative rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-surface-100 to-surface-100 p-5 hover:border-amber-500/40 transition-all overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl -translate-y-6 translate-x-6" />
-          <div className="relative">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center mb-4">
-              <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0012 2.25z" />
-              </svg>
-            </div>
-            <h3 className="text-base font-semibold text-white mb-1">Risk Calculator</h3>
-            <p className="text-sm text-gray-400">Position sizing & risk-reward ratios</p>
-            <span className="inline-flex items-center gap-1 text-xs text-amber-400 mt-3 group-hover:gap-2 transition-all">
-              Calculate <span>→</span>
-            </span>
-          </div>
-        </Link>
-      </div>
-
-      {/* Secondary links */}
-      <div className="grid grid-cols-3 gap-4">
-        <Link href="/reports" className="group rounded-xl border border-surface-300 bg-surface-100 p-4 hover:border-surface-400 hover:bg-surface-200/50 transition-all">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-              <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-white">PDF Reports</h3>
-              <p className="text-xs text-gray-500">Downloadable trade reports</p>
-            </div>
-          </div>
-          <span className="text-xs text-gray-600 group-hover:text-gray-400 transition-colors">Generate →</span>
-        </Link>
-
-        <Link href="/trades" className="group rounded-xl border border-surface-300 bg-surface-100 p-4 hover:border-surface-400 hover:bg-surface-200/50 transition-all">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-              <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-white">CSV Import</h3>
-              <p className="text-xs text-gray-500">Sync from your broker</p>
-            </div>
-          </div>
-          <span className="text-xs text-gray-600 group-hover:text-gray-400 transition-colors">Import →</span>
-        </Link>
-
-        <Link href="/billing" className="group rounded-xl border border-surface-300 bg-surface-100 p-4 hover:border-surface-400 hover:bg-surface-200/50 transition-all">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-              <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-white">Billing</h3>
-              <p className="text-xs text-gray-500">
-                {isPro ? "Pro plan active" : "Free plan · Upgrade"}
-              </p>
-            </div>
-          </div>
-          <span className="text-xs text-gray-600 group-hover:text-gray-400 transition-colors">Manage →</span>
-        </Link>
+            <h3 className="text-base font-medium text-white mb-1">{tool.title}</h3>
+            <p className={`text-sm ${tool.accent ? "text-profit" : "text-gray-500"}`}>{tool.desc}</p>
+          </Link>
+        ))}
       </div>
     </div>
   );

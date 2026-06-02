@@ -88,12 +88,12 @@ function BillingContent() {
       </div>
 
       {success && (
-        <div className="mb-6 rounded-lg border border-profit/30 bg-profit-muted px-4 py-3 text-profit text-sm">
+        <div className="mb-6 border border-profit/30 bg-profit-muted px-4 py-3 text-profit text-sm">
           Subscription activated! You now have access to all Pro features.
         </div>
       )}
       {canceled && (
-        <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-400 text-sm">
+        <div className="mb-6 border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-400 text-sm">
           Checkout was canceled. No charges were made.
         </div>
       )}
