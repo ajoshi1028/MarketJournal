@@ -130,7 +130,7 @@ export default function ReplayPage() {
                     <button
                       key={t.id}
                       onClick={() => setSelected(t)}
-                      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      className={`w-full text-left px-3 py-2.5 text-sm transition-colors ${
                         isActive
                           ? "bg-accent/15 text-accent-light"
                           : "text-gray-400 hover:bg-surface-200"
@@ -539,7 +539,7 @@ const TradeChart = forwardRef<TradeChartHandle, {
   }, [chartData]);
 
   return (
-    <div className="rounded-lg overflow-hidden border border-surface-300 relative">
+    <div className="overflow-hidden border border-surface-300 relative">
       <div className="flex items-center gap-1 px-3 py-2 bg-surface-200 border-b border-surface-300">
         {INTERVALS.map((iv) => (
           <button

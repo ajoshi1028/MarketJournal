@@ -193,7 +193,7 @@ export default function AccountPage() {
       </div>
 
       {loadError && (
-        <div className="rounded-lg border border-red-500/30 bg-loss-muted px-4 py-3 text-red-400 text-sm">
+        <div className="border border-red-500/30 bg-loss-muted px-4 py-3 text-red-400 text-sm">
           Failed to load trades: {loadError}
         </div>
       )}
@@ -313,7 +313,7 @@ export default function AccountPage() {
             return (
               <div
                 key={cell.iso}
-                className={`h-14 rounded-lg border flex flex-col items-center justify-center transition-colors ${bg} ${
+                className={`h-14 border flex flex-col items-center justify-center transition-colors ${bg} ${
                   isToday ? "ring-2 ring-accent/50 ring-offset-1 ring-offset-surface" : ""
                 }`}
               >
