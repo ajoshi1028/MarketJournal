@@ -68,6 +68,11 @@ model TradeEntry {
   avgSellPrice Float?
   realizedPnl  Float?
 
+  // Source of the trade ("manual", "csv", "snaptrade") and a deterministic
+  // fingerprint used to de-duplicate trades on repeated broker syncs.
+  source   String? @default("manual")
+  syncHash String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -75,6 +80,21 @@ model TradeEntry {
 
   @@index([userId])
   @@index([userId, entryDate])
+  @@index([userId, syncHash])
+}
+
+/// One row per user who has linked a brokerage through SnapTrade.
+/// We store SnapTrade's userSecret here — never the user's brokerage creds.
+model BrokerConnection {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  provider     String    @default("snaptrade")
+  snaptradeSecret String
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId])
 }
 
 model TradeLeg {

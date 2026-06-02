@@ -62,6 +62,48 @@ export default function TrackPage() {
   const [sortKey, setSortKey] = useState<SortKey>("DATE_DESC");
   const [showClearModal, setShowClearModal] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [brokerBusy, setBrokerBusy] = useState<"connect" | "sync" | null>(null);
+  const [brokerMsg, setBrokerMsg] = useState<string | null>(null);
+
+  async function connectBroker() {
+    setBrokerBusy("connect");
+    setBrokerMsg(null);
+    try {
+      const res = await fetch("/api/broker/connect", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || !data.redirectUrl) {
+        setBrokerMsg(data.error || "Could not start connection.");
+        return;
+      }
+      window.location.href = data.redirectUrl;
+    } catch {
+      setBrokerMsg("Network error. Please try again.");
+    } finally {
+      setBrokerBusy(null);
+    }
+  }
+
+  async function syncBroker() {
+    setBrokerBusy("sync");
+    setBrokerMsg(null);
+    try {
+      const res = await fetch("/api/broker/sync", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setBrokerMsg(data.error || "Sync failed.");
+        return;
+      }
+      setBrokerMsg(data.message || "Synced.");
+      if (data.imported > 0) {
+        const refreshed = await fetch("/api/trades", { cache: "no-store" });
+        if (refreshed.ok) setTrades(await refreshed.json());
+      }
+    } catch {
+      setBrokerMsg("Network error. Please try again.");
+    } finally {
+      setBrokerBusy(null);
+    }
+  }
 
   useEffect(() => {
     if (!isLoaded || !user) return;
@@ -209,15 +251,39 @@ export default function TrackPage() {
             Filter, sort, and analyze your trades with AI.
           </p>
         </div>
-        {trades.length > 0 && (
+        <div className="flex items-center gap-2 shrink-0 mt-1">
           <button
-            onClick={() => setShowClearModal(true)}
-            className="btn-danger text-xs px-3 py-1.5 shrink-0 mt-1"
+            onClick={connectBroker}
+            disabled={brokerBusy !== null}
+            className="bg-surface-200 text-gray-200 hover:bg-surface-300 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+            title="Link Robinhood, Webull, and more via SnapTrade"
           >
-            Clear All Trades
+            {brokerBusy === "connect" ? "Connecting..." : "Connect broker"}
           </button>
-        )}
+          <button
+            onClick={syncBroker}
+            disabled={brokerBusy !== null}
+            className="bg-surface-200 text-gray-200 hover:bg-surface-300 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+            title="Pull new trades from your connected brokerage"
+          >
+            {brokerBusy === "sync" ? "Syncing..." : "Sync trades"}
+          </button>
+          {trades.length > 0 && (
+            <button
+              onClick={() => setShowClearModal(true)}
+              className="btn-danger text-xs px-3 py-1.5"
+            >
+              Clear All Trades
+            </button>
+          )}
+        </div>
       </div>
+
+      {brokerMsg && (
+        <div className="mb-4 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-accent-light text-sm">
+          {brokerMsg}
+        </div>
+      )}
 
       {loadError && (
         <div className="mb-4 rounded-lg border border-red-500/30 bg-loss-muted px-4 py-3 text-red-400 text-sm">
