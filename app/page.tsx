@@ -4,64 +4,80 @@ import Dashboard from "./Dashboard";
 
 export const dynamic = "force-dynamic";
 
-/* ── Inline product previews (pure CSS, no images needed) ── */
+/* Faint graph-paper grid — fits a trading product, replaces the blur orbs. */
+const gridBg: React.CSSProperties = {
+  backgroundImage:
+    "linear-gradient(to right, rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.025) 1px, transparent 1px)",
+  backgroundSize: "72px 72px",
+};
+
+/* ── Inline product previews (pure CSS, no images) ── */
 
 function DashboardPreview() {
   return (
-    <div className="rounded-2xl bg-surface-100 border border-surface-300/40 p-5 shadow-2xl shadow-black/40 select-none" aria-hidden="true">
-      {/* Stat cards */}
-      <div className="grid grid-cols-4 gap-3 mb-4">
-        {[
-          { label: "Net P&L", value: "+$618.91", color: "text-profit" },
-          { label: "Win Rate", value: "49.4%", color: "text-white" },
-          { label: "Profit Factor", value: "1.14", color: "text-white" },
-          { label: "Loss Streak", value: "1", color: "text-loss" },
-        ].map((s) => (
-          <div key={s.label} className="bg-surface-200/60 rounded-xl p-3">
-            <p className="text-[10px] text-gray-500 mb-1">{s.label}</p>
-            <p className={`text-sm font-bold font-mono ${s.color}`}>{s.value}</p>
-          </div>
-        ))}
+    <div className="bg-surface-100 border border-surface-300 select-none" aria-hidden="true">
+      {/* terminal title bar */}
+      <div className="flex items-center justify-between border-b border-surface-300 px-4 py-2.5">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500">
+          dashboard
+        </span>
+        <span className="font-mono text-[10px] text-gray-600">/journal</span>
       </div>
-
-      <div className="grid grid-cols-5 gap-3">
-        {/* Recent trades */}
-        <div className="col-span-3 bg-surface-200/40 rounded-xl p-3">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-white">Recent Trades</p>
-            <span className="text-[10px] text-accent-light">Log trade &rarr;</span>
-          </div>
-          <div className="space-y-2">
-            {[
-              { ticker: "IWM", detail: "May 25 · Call $286", pnl: "$192.05", loss: true },
-              { ticker: "QQQ", detail: "May 21 · Call $717", pnl: "$48.28", loss: true },
-              { ticker: "QQQ", detail: "May 21 · Put $712", pnl: "+$119.15", loss: false },
-              { ticker: "QQQ", detail: "May 19 · Put $693", pnl: "+$3.68", loss: false },
-              { ticker: "QQQ", detail: "May 18 · Put $702", pnl: "+$43.80", loss: false },
-            ].map((t, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={`w-1.5 h-1.5 rounded-full ${t.loss ? "bg-loss" : "bg-profit"}`} />
-                  <div>
-                    <p className="text-[11px] font-semibold text-white">{t.ticker}</p>
-                    <p className="text-[9px] text-gray-500">{t.detail}</p>
-                  </div>
-                </div>
-                <p className={`text-[11px] font-mono font-medium ${t.loss ? "text-loss" : "text-profit"}`}>{t.pnl}</p>
-              </div>
-            ))}
-          </div>
+      <div className="p-5">
+        {/* Stat cards */}
+        <div className="grid grid-cols-4 divide-x divide-surface-300 border border-surface-300 mb-4">
+          {[
+            { label: "Net P&L", value: "+$618.91", color: "text-profit" },
+            { label: "Win Rate", value: "49.4%", color: "text-white" },
+            { label: "Profit Factor", value: "1.14", color: "text-white" },
+            { label: "Loss Streak", value: "1", color: "text-loss" },
+          ].map((s) => (
+            <div key={s.label} className="p-3">
+              <p className="font-mono text-[9px] uppercase tracking-wider text-gray-500 mb-1">{s.label}</p>
+              <p className={`text-sm font-bold font-mono ${s.color}`}>{s.value}</p>
+            </div>
+          ))}
         </div>
 
-        {/* Journal */}
-        <div className="col-span-2 bg-surface-200/40 rounded-xl p-3">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-white">Today&apos;s Journal</p>
-            <span className="text-[10px] text-accent-light">Edit &rarr;</span>
+        <div className="grid grid-cols-5 gap-3">
+          {/* Recent trades */}
+          <div className="col-span-3 border border-surface-300 p-3">
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-gray-400">Recent Trades</p>
+              <span className="font-mono text-[10px] text-accent-light">log &rarr;</span>
+            </div>
+            <div className="space-y-2">
+              {[
+                { ticker: "IWM", detail: "May 25 · Call $286", pnl: "$192.05", loss: true },
+                { ticker: "QQQ", detail: "May 21 · Call $717", pnl: "$48.28", loss: true },
+                { ticker: "QQQ", detail: "May 21 · Put $712", pnl: "+$119.15", loss: false },
+                { ticker: "QQQ", detail: "May 19 · Put $693", pnl: "+$3.68", loss: false },
+                { ticker: "QQQ", detail: "May 18 · Put $702", pnl: "+$43.80", loss: false },
+              ].map((t, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-1.5 h-1.5 ${t.loss ? "bg-loss" : "bg-profit"}`} />
+                    <div>
+                      <p className="text-[11px] font-semibold text-white font-mono">{t.ticker}</p>
+                      <p className="text-[9px] text-gray-500">{t.detail}</p>
+                    </div>
+                  </div>
+                  <p className={`text-[11px] font-mono font-medium ${t.loss ? "text-loss" : "text-profit"}`}>{t.pnl}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <p className="text-[9px] text-gray-500 mb-1">Pre-market plan</p>
-          <p className="text-[11px] text-white mb-4">Looking for a Bullish Day!</p>
-          <p className="text-[10px] text-accent-light italic">Don&apos;t forget your post-market review today.</p>
+
+          {/* Journal */}
+          <div className="col-span-2 border border-surface-300 p-3">
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-gray-400">Journal</p>
+              <span className="font-mono text-[10px] text-accent-light">edit &rarr;</span>
+            </div>
+            <p className="font-mono text-[9px] uppercase tracking-wider text-gray-500 mb-1">Pre-market plan</p>
+            <p className="text-[11px] text-white mb-4">Looking for a Bullish Day!</p>
+            <p className="text-[10px] text-accent-light">&rsaquo; post-market review pending</p>
+          </div>
         </div>
       </div>
     </div>
@@ -70,59 +86,74 @@ function DashboardPreview() {
 
 function AnalyticsPreview() {
   return (
-    <div className="rounded-2xl bg-surface-100 border border-surface-300/40 p-5 shadow-2xl shadow-black/40 select-none" aria-hidden="true">
-      {/* Stat row */}
-      <div className="grid grid-cols-5 gap-2 mb-3">
-        {[
-          { label: "Net P&L", value: "$618.91", color: "text-profit" },
-          { label: "Win Rate", value: "49.4%", color: "text-loss" },
-          { label: "Profit Factor", value: "1.14", color: "text-white" },
-          { label: "Expectancy", value: "$8.04", color: "text-white" },
-          { label: "Risk/Reward", value: "1:1.17", color: "text-white" },
-        ].map((s) => (
-          <div key={s.label} className="bg-surface-200/60 rounded-lg p-2.5">
-            <p className="text-[9px] text-gray-500 mb-0.5">{s.label}</p>
-            <p className={`text-xs font-bold font-mono ${s.color}`}>{s.value}</p>
-          </div>
-        ))}
+    <div className="bg-surface-100 border border-surface-300 select-none" aria-hidden="true">
+      <div className="flex items-center justify-between border-b border-surface-300 px-4 py-2.5">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500">analytics</span>
+        <span className="font-mono text-[10px] text-gray-600">all trades</span>
       </div>
-
-      {/* Streaks */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        {[
-          { label: "Current Streak", value: "1L", color: "text-loss" },
-          { label: "Best Win Streak", value: "4", color: "text-profit" },
-          { label: "Worst Loss Streak", value: "5", color: "text-loss" },
-        ].map((s) => (
-          <div key={s.label} className="bg-surface-200/40 rounded-lg p-2.5 text-center">
-            <p className="text-[9px] text-gray-500 mb-0.5">{s.label}</p>
-            <p className={`text-sm font-bold font-mono ${s.color}`}>{s.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* P&L by Day chart mockup */}
-      <div className="bg-surface-200/40 rounded-lg p-3">
-        <p className="text-[10px] font-semibold text-white mb-3">P&L by Day of Week</p>
-        <div className="flex items-end justify-between gap-1 h-20 px-2">
+      <div className="p-5">
+        {/* Stat row */}
+        <div className="grid grid-cols-5 divide-x divide-surface-300 border border-surface-300 mb-3">
           {[
-            { day: "Mon", h: 40, positive: true },
-            { day: "Tue", h: 55, positive: true },
-            { day: "Wed", h: 35, positive: false },
-            { day: "Thu", h: 25, positive: true },
-            { day: "Fri", h: 15, positive: true },
-          ].map((d) => (
-            <div key={d.day} className="flex flex-col items-center gap-1 flex-1">
-              <div
-                className={`w-full max-w-[28px] rounded-sm ${d.positive ? "bg-profit/80" : "bg-loss/70"}`}
-                style={{ height: `${d.h}px` }}
-              />
-              <span className="text-[8px] text-gray-500">{d.day}</span>
+            { label: "Net P&L", value: "$618.91", color: "text-profit" },
+            { label: "Win Rate", value: "49.4%", color: "text-loss" },
+            { label: "Profit Fct", value: "1.14", color: "text-white" },
+            { label: "Expectancy", value: "$8.04", color: "text-white" },
+            { label: "R:R", value: "1:1.17", color: "text-white" },
+          ].map((s) => (
+            <div key={s.label} className="p-2.5">
+              <p className="font-mono text-[8px] uppercase tracking-wider text-gray-500 mb-0.5">{s.label}</p>
+              <p className={`text-xs font-bold font-mono ${s.color}`}>{s.value}</p>
             </div>
           ))}
         </div>
+
+        {/* Streaks */}
+        <div className="grid grid-cols-3 divide-x divide-surface-300 border border-surface-300 mb-4">
+          {[
+            { label: "Current", value: "1L", color: "text-loss" },
+            { label: "Best Win", value: "4", color: "text-profit" },
+            { label: "Worst Loss", value: "5", color: "text-loss" },
+          ].map((s) => (
+            <div key={s.label} className="p-2.5 text-center">
+              <p className="font-mono text-[8px] uppercase tracking-wider text-gray-500 mb-0.5">{s.label}</p>
+              <p className={`text-sm font-bold font-mono ${s.color}`}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* P&L by Day chart mockup */}
+        <div className="border border-surface-300 p-3">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-gray-400 mb-3">P&L · day of week</p>
+          <div className="flex items-end justify-between gap-1 h-20 px-2">
+            {[
+              { day: "Mon", h: 40, positive: true },
+              { day: "Tue", h: 55, positive: true },
+              { day: "Wed", h: 35, positive: false },
+              { day: "Thu", h: 25, positive: true },
+              { day: "Fri", h: 15, positive: true },
+            ].map((d) => (
+              <div key={d.day} className="flex flex-col items-center gap-1 flex-1">
+                <div
+                  className={`w-full max-w-[28px] ${d.positive ? "bg-profit" : "bg-loss"}`}
+                  style={{ height: `${d.h}px` }}
+                />
+                <span className="font-mono text-[8px] text-gray-500">{d.day}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
+  );
+}
+
+/* Small reusable label */
+function Kicker({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-gray-500">
+      {children}
+    </span>
   );
 }
 
@@ -130,61 +161,68 @@ export default function HomePage() {
   return (
     <main>
       <SignedOut>
-        {/* Hero */}
-        <section className="relative overflow-hidden">
-          {/* Gradient mesh background */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-accent/[0.07] blur-[120px]" />
-            <div className="absolute bottom-[-30%] left-[-10%] w-[600px] h-[600px] rounded-full bg-purple-500/[0.05] blur-[100px]" />
-            <div className="absolute top-[20%] left-[30%] w-[400px] h-[400px] rounded-full bg-profit/[0.04] blur-[80px]" />
-          </div>
-
-          <div className="max-w-7xl mx-auto px-6 pt-20 pb-12 relative">
-            <div className="max-w-4xl mx-auto text-center">
-              <h1 className="text-5xl sm:text-6xl md:text-[5.5rem] font-bold tracking-tight leading-[1.05] mb-8">
-                <span className="text-white">Financial platform</span>
+        {/* ── Hero ── */}
+        <section className="border-b border-surface-300" style={gridBg}>
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="pt-24 pb-16 max-w-3xl">
+              <div className="flex items-center gap-3 mb-8">
+                <span className="h-px w-8 bg-accent-light" />
+                <Kicker>Options trading journal · est. 2026</Kicker>
+              </div>
+              <h1 className="text-[2.75rem] sm:text-6xl md:text-7xl font-light tracking-tight leading-[0.95] text-white mb-8">
+                The journal serious
                 <br />
-                <span className="text-accent-light">for smarter trading</span>
+                options traders
+                <br />
+                <span className="italic text-accent-light">actually</span> keep.
               </h1>
-              <p className="text-lg md:text-xl text-gray-400 leading-relaxed mb-12 max-w-2xl mx-auto font-[family-name:var(--font-heading)] font-light">
-                Log trades, analyze charts with AI, get personalized coaching,
-                and track performance with deep analytics — all in one platform.
+              <p className="text-lg md:text-xl text-gray-400 leading-relaxed max-w-xl mb-10">
+                Log every fill. Let AI review your charts. Watch the metrics
+                that tell you whether you&apos;re getting better — not just busier.
               </p>
-              <p className="text-gray-600 text-xs">
-                No credit card required.{" "}
-                <Link href="/terms" className="underline hover:text-gray-400 transition-colors">Terms</Link>
-                {" & "}
-                <Link href="/privacy" className="underline hover:text-gray-400 transition-colors">Privacy</Link>
-              </p>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                <Link
+                  href="/sign-up"
+                  className="group inline-flex items-center gap-2 bg-white text-surface font-medium text-sm px-6 py-3 hover:bg-accent-light transition-colors"
+                >
+                  Start journaling
+                  <span className="transition-transform group-hover:translate-x-0.5">&rarr;</span>
+                </Link>
+                <span className="font-mono text-xs text-gray-500">
+                  free · no card required
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* Dashboard preview — hero visual */}
-          <div className="max-w-7xl mx-auto px-6 pb-28 relative">
-            <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-b from-accent/[0.08] via-purple-500/[0.04] to-transparent rounded-3xl blur-2xl pointer-events-none" />
+            {/* framed preview */}
+            <div className="pb-20">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-600">
+                  fig. 01 — your workspace
+                </span>
+                <span className="h-px flex-1 bg-surface-300" />
+              </div>
               <DashboardPreview />
             </div>
           </div>
         </section>
 
-        {/* Stats bar */}
-        <section className="relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-surface-50/50 to-surface-50 pointer-events-none" />
-          <div className="max-w-7xl mx-auto px-6 py-20 relative">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+        {/* ── Ticker strip ── */}
+        <section className="border-b border-surface-300 bg-surface-50">
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-surface-300">
               {[
-                { value: "10+", label: "Performance metrics tracked" },
-                { value: "2", label: "Brokers supported for CSV import" },
-                { value: "AI", label: "Powered chart & trade analysis" },
-                { value: "$0", label: "To get started, no card required" },
-              ].map((stat) => (
-                <div key={stat.label}>
-                  <p className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">
-                    {stat.value}
+                { value: "10+", label: "Performance metrics" },
+                { value: "2", label: "Broker CSV imports" },
+                { value: "AI", label: "Chart & trade analysis" },
+                { value: "$0", label: "To get started" },
+              ].map((s, i) => (
+                <div key={s.label} className={`py-8 ${i % 2 === 0 ? "pr-6" : "px-6"} ${i >= 2 ? "" : ""}`}>
+                  <p className="text-3xl md:text-4xl font-mono font-bold text-white mb-2">
+                    {s.value}
                   </p>
-                  <p className="text-sm text-gray-500 leading-relaxed">
-                    {stat.label}
+                  <p className="font-mono text-[11px] uppercase tracking-wider text-gray-500">
+                    {s.label}
                   </p>
                 </div>
               ))}
@@ -192,200 +230,175 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Bento grid — Core features */}
-        <section className="bg-surface-50">
-          <div className="max-w-7xl mx-auto px-6 py-28">
-            <div className="max-w-2xl mb-20">
-              <p className="text-accent-light text-sm font-medium tracking-wide uppercase mb-4">
-                Platform
-              </p>
-              <h2 className="text-4xl md:text-5xl font-bold text-white leading-[1.1] mb-6">
-                Everything you need to
-                <br />
-                trade with an edge
-              </h2>
-              <p className="text-gray-400 text-lg leading-relaxed">
-                Purpose-built for options traders who want to improve systematically.
-              </p>
-            </div>
+        {/* ── 01 · Features ── */}
+        <section className="border-b border-surface-300">
+          <div className="max-w-6xl mx-auto px-6 py-24">
+            <div className="grid md:grid-cols-12 gap-x-8 gap-y-12">
+              <div className="md:col-span-4">
+                <Kicker>01 — Platform</Kicker>
+                <h2 className="text-3xl md:text-4xl font-light text-white leading-tight mt-5 tracking-tight">
+                  Everything in
+                  <br />
+                  one workspace
+                </h2>
+                <p className="text-gray-500 text-base leading-relaxed mt-5 max-w-xs">
+                  Purpose-built for options traders who want to improve on
+                  purpose, not by accident.
+                </p>
+              </div>
 
-            {/* Bento grid */}
-            <div className="grid md:grid-cols-12 gap-4">
-              {/* Large card — Trade Journal */}
-              <div className="md:col-span-7 rounded-2xl bg-gradient-to-br from-surface-200 to-surface-100 p-8 md:p-10 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-accent/[0.06] rounded-full blur-[60px] group-hover:bg-accent/[0.1] transition-all duration-700" />
-                <div className="relative">
-                  <p className="text-accent-light text-xs font-semibold tracking-wider uppercase mb-4">Trade Journal</p>
-                  <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 leading-tight">
-                    Log every trade,<br />capture every detail
-                  </h3>
-                  <p className="text-gray-400 text-base leading-relaxed max-w-md mb-8">
-                    Options-first entry with strike, expiry, multi-leg fills, and chart screenshots. Import automatically via CSV from Robinhood and Webull.
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    {["Calls & Puts", "Multi-fill", "Chart Upload", "CSV Import"].map((tag) => (
-                      <span key={tag} className="text-xs text-gray-400 bg-surface-300/60 px-3 py-1.5 rounded-full">
-                        {tag}
-                      </span>
-                    ))}
+              {/* feature rows — hairline-ruled, no cards/glows */}
+              <div className="md:col-span-8 border-t border-surface-300">
+                {[
+                  {
+                    no: "A",
+                    title: "Trade journal",
+                    body: "Options-first entry with strike, expiry, multi-leg fills, and chart screenshots. Auto-import via CSV from Robinhood and Webull.",
+                    tags: ["Calls & Puts", "Multi-fill", "Chart upload", "CSV import"],
+                  },
+                  {
+                    no: "B",
+                    title: "AI coach & chart analysis",
+                    body: "Daily reports on your trades — strengths, weaknesses, action items. Upload a chart screenshot and get instant feedback on your entries and exits.",
+                    tags: ["Daily reports", "Follow-up Q&A", "Vision analysis"],
+                  },
+                  {
+                    no: "C",
+                    title: "Deep analytics",
+                    body: "Win rate, profit factor, expectancy, P&L by weekday, ticker and strategy breakdowns, win/loss streaks — recomputed on every trade you log.",
+                    tags: ["10+ metrics", "Weekday P&L", "Streaks"],
+                  },
+                  {
+                    no: "D",
+                    title: "Calculator, replay & reports",
+                    body: "Position-size risk calculator, trade replay against live charts, and downloadable PDF performance reports.",
+                    tags: ["Risk calc", "Replay", "PDF export"],
+                  },
+                ].map((f) => (
+                  <div
+                    key={f.no}
+                    className="grid grid-cols-[auto,1fr] gap-x-6 border-b border-surface-300 py-7 group"
+                  >
+                    <span className="font-mono text-sm text-gray-600 pt-1 group-hover:text-accent-light transition-colors">
+                      {f.no}
+                    </span>
+                    <div>
+                      <h3 className="text-xl font-medium text-white mb-2">{f.title}</h3>
+                      <p className="text-gray-400 text-sm leading-relaxed max-w-lg mb-4">
+                        {f.body}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {f.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="font-mono text-[10px] uppercase tracking-wider text-gray-500 border border-surface-300 px-2 py-1"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Right stack */}
-              <div className="md:col-span-5 flex flex-col gap-4">
-                <div className="flex-1 rounded-2xl bg-gradient-to-br from-purple-500/[0.08] to-surface-100 p-8 relative overflow-hidden group">
-                  <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/[0.06] rounded-full blur-[50px] group-hover:bg-purple-500/[0.1] transition-all duration-700" />
-                  <div className="relative">
-                    <p className="text-purple-400 text-xs font-semibold tracking-wider uppercase mb-3">AI Coach</p>
-                    <h3 className="text-xl font-bold text-white mb-2">Personalized coaching reports</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">
-                      Daily analysis of your trades with strengths, weaknesses, and action items. Ask follow-up questions grounded in your data.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex-1 rounded-2xl bg-gradient-to-br from-profit/[0.06] to-surface-100 p-8 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-48 h-48 bg-profit/[0.05] rounded-full blur-[50px] group-hover:bg-profit/[0.09] transition-all duration-700" />
-                  <div className="relative">
-                    <p className="text-profit text-xs font-semibold tracking-wider uppercase mb-3">Chart Analysis</p>
-                    <h3 className="text-xl font-bold text-white mb-2">AI reads your charts</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">
-                      Upload a screenshot and get instant feedback on entries, exits, and trade structure.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom row — 3 equal cards */}
-              <div className="md:col-span-4 rounded-2xl bg-surface-100 p-8 relative overflow-hidden group">
-                <div className="absolute bottom-0 right-0 w-32 h-32 bg-amber-500/[0.05] rounded-full blur-[40px] group-hover:bg-amber-500/[0.09] transition-all duration-700" />
-                <div className="relative">
-                  <p className="text-amber-400 text-xs font-semibold tracking-wider uppercase mb-3">Analytics</p>
-                  <h3 className="text-lg font-bold text-white mb-2">Deep performance metrics</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">
-                    Win rate, profit factor, P&L by weekday, ticker breakdown, streaks, and more.
-                  </p>
-                </div>
-              </div>
-
-              <div className="md:col-span-4 rounded-2xl bg-surface-100 p-8 relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-32 h-32 bg-cyan-500/[0.05] rounded-full blur-[40px] group-hover:bg-cyan-500/[0.09] transition-all duration-700" />
-                <div className="relative">
-                  <p className="text-cyan-400 text-xs font-semibold tracking-wider uppercase mb-3">Daily Journal</p>
-                  <h3 className="text-lg font-bold text-white mb-2">Pre-market &amp; post-market</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">
-                    Game plans, watchlists, mood tracking, self-grading, and lessons learned.
-                  </p>
-                </div>
-              </div>
-
-              <div className="md:col-span-4 rounded-2xl bg-surface-100 p-8 relative overflow-hidden group">
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-rose-500/[0.05] rounded-full blur-[40px] group-hover:bg-rose-500/[0.09] transition-all duration-700" />
-                <div className="relative">
-                  <p className="text-rose-400 text-xs font-semibold tracking-wider uppercase mb-3">Tools</p>
-                  <h3 className="text-lg font-bold text-white mb-2">Calculator, replay &amp; reports</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">
-                    Risk calculator, trade replay with live charts, and downloadable PDF reports.
-                  </p>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         </section>
 
-        {/* Analytics showcase */}
-        <section className="relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-[10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-amber-500/[0.03] blur-[100px]" />
-            <div className="absolute bottom-[10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-accent/[0.04] blur-[80px]" />
-          </div>
-          <div className="max-w-7xl mx-auto px-6 py-28 relative">
+        {/* ── 02 · Analytics ── */}
+        <section className="border-b border-surface-300 bg-surface-50">
+          <div className="max-w-6xl mx-auto px-6 py-24">
             <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
               <div>
-                <p className="text-amber-400 text-sm font-medium tracking-wide uppercase mb-4">
-                  Analytics
-                </p>
-                <h2 className="text-4xl md:text-5xl font-bold text-white leading-[1.1] mb-6">
-                  See where you make
+                <Kicker>02 — Analytics</Kicker>
+                <h2 className="text-3xl md:text-5xl font-light text-white leading-[1.05] mt-5 mb-6 tracking-tight">
+                  See where you
                   <br />
-                  and lose money
+                  make and lose money
                 </h2>
-                <p className="text-gray-400 text-lg leading-relaxed mb-8">
-                  10+ metrics across all your trades — updated automatically every time you log a trade.
+                <p className="text-gray-400 text-lg leading-relaxed mb-8 max-w-md">
+                  Ten-plus metrics across every trade you log — recalculated
+                  automatically, no spreadsheets.
                 </p>
-                <div className="space-y-3">
+                <div className="border-t border-surface-300">
                   {[
                     "Win rate, profit factor & expectancy",
                     "P&L breakdown by day of week",
                     "Monthly performance trends",
                     "Ticker & strategy analysis",
                     "Win and loss streaks",
-                  ].map((item) => (
-                    <p key={item} className="text-sm text-gray-300 flex items-center gap-3">
-                      <span className="w-1 h-1 rounded-full bg-amber-400 shrink-0" />
+                  ].map((item, i) => (
+                    <p
+                      key={item}
+                      className="flex items-baseline gap-4 border-b border-surface-300 py-3 text-sm text-gray-300"
+                    >
+                      <span className="font-mono text-xs text-gray-600">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
                       {item}
                     </p>
                   ))}
                 </div>
               </div>
-              <div className="relative">
-                <div className="absolute -inset-4 bg-gradient-to-br from-amber-500/[0.06] via-transparent to-accent/[0.04] rounded-3xl blur-2xl pointer-events-none" />
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-600">
+                    fig. 02 — analytics view
+                  </span>
+                  <span className="h-px flex-1 bg-surface-300" />
+                </div>
                 <AnalyticsPreview />
               </div>
             </div>
           </div>
         </section>
 
-        {/* Pricing */}
-        <section className="bg-surface-50 relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute bottom-[-20%] left-[20%] w-[600px] h-[600px] rounded-full bg-accent/[0.04] blur-[100px]" />
-          </div>
-          <div className="max-w-7xl mx-auto px-6 py-28 relative">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-white leading-[1.1] mb-6">
-                Simple, transparent pricing
+        {/* ── 03 · Pricing ── */}
+        <section className="border-b border-surface-300">
+          <div className="max-w-6xl mx-auto px-6 py-24">
+            <div className="max-w-2xl mb-14">
+              <Kicker>03 — Pricing</Kicker>
+              <h2 className="text-3xl md:text-5xl font-light text-white leading-tight mt-5 tracking-tight">
+                Start free.
+                <br />
+                Upgrade when it pays for itself.
               </h2>
-              <p className="text-gray-400 text-lg">
-                Start free. Upgrade when you&apos;re ready.
-              </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            <div className="grid md:grid-cols-2 border border-surface-300 divide-y md:divide-y-0 md:divide-x divide-surface-300">
               {/* Free */}
-              <div className="rounded-2xl bg-surface-100 p-8 md:p-10">
-                <p className="text-sm font-medium text-gray-400 mb-1">Free</p>
-                <p className="text-5xl font-bold text-white mb-2 tracking-tight">
-                  $0
-                  <span className="text-lg text-gray-500 font-normal ml-1">/mo</span>
-                </p>
-                <p className="text-gray-500 text-sm mb-8">Everything to get started</p>
-                <div className="space-y-4 mb-10">
+              <div className="p-8 md:p-10">
+                <div className="flex items-baseline justify-between mb-6">
+                  <p className="font-mono text-xs uppercase tracking-[0.2em] text-gray-400">Free</p>
+                  <p className="font-mono text-4xl font-bold text-white">
+                    $0<span className="text-base text-gray-500 font-normal">/mo</span>
+                  </p>
+                </div>
+                <div className="border-t border-surface-300">
                   {["10 AI chart analyses", "10 coaching reports", "Basic analytics", "Risk calculator", "Daily journal"].map((item) => (
-                    <p key={item} className="text-sm text-gray-300 flex items-center gap-3">
-                      <span className="w-1 h-1 rounded-full bg-gray-500 shrink-0" />
+                    <p key={item} className="flex items-center gap-3 border-b border-surface-300 py-3 text-sm text-gray-300">
+                      <span className="font-mono text-gray-600">+</span>
                       {item}
                     </p>
                   ))}
                 </div>
                 <Link
                   href="/sign-up"
-                  className="block text-center text-sm font-semibold text-white bg-surface-300 hover:bg-surface-400 px-6 py-3.5 rounded-lg transition-colors"
+                  className="mt-8 block text-center font-mono text-xs uppercase tracking-[0.2em] text-white border border-surface-400 hover:border-gray-500 px-6 py-3.5 transition-colors"
                 >
                   Get started
                 </Link>
               </div>
 
               {/* Pro */}
-              <div className="rounded-2xl bg-gradient-to-br from-accent/[0.12] to-surface-100 p-8 md:p-10 ring-1 ring-accent/20">
-                <p className="text-sm font-medium text-accent-light mb-1">Pro</p>
-                <p className="text-5xl font-bold text-white mb-2 tracking-tight">
-                  $19
-                  <span className="text-lg text-gray-500 font-normal ml-1">/mo</span>
-                </p>
-                <p className="text-gray-500 text-sm mb-8">For serious traders</p>
-                <div className="space-y-4 mb-10">
+              <div className="p-8 md:p-10 bg-surface-100">
+                <div className="flex items-baseline justify-between mb-6">
+                  <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-light">Pro</p>
+                  <p className="font-mono text-4xl font-bold text-white">
+                    $19<span className="text-base text-gray-500 font-normal">/mo</span>
+                  </p>
+                </div>
+                <div className="border-t border-surface-300">
                   {[
                     "Unlimited trades",
                     "Unlimited AI analysis",
@@ -396,15 +409,15 @@ export default function HomePage() {
                     "CSV broker import",
                     "Priority support",
                   ].map((item) => (
-                    <p key={item} className="text-sm text-gray-300 flex items-center gap-3">
-                      <span className="w-1 h-1 rounded-full bg-accent-light shrink-0" />
+                    <p key={item} className="flex items-center gap-3 border-b border-surface-300 py-3 text-sm text-gray-200">
+                      <span className="font-mono text-accent-light">+</span>
                       {item}
                     </p>
                   ))}
                 </div>
                 <Link
                   href="/sign-up"
-                  className="block text-center text-sm font-semibold text-white bg-accent hover:bg-accent-dark px-6 py-3.5 rounded-lg transition-all hover:shadow-lg hover:shadow-accent/25"
+                  className="mt-8 block text-center font-mono text-xs uppercase tracking-[0.2em] text-surface bg-white hover:bg-accent-light px-6 py-3.5 transition-colors"
                 >
                   Upgrade to Pro
                 </Link>
@@ -413,19 +426,19 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="border-t border-surface-300/50">
-          <div className="max-w-7xl mx-auto px-6 py-12">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+        {/* ── Footer ── */}
+        <footer>
+          <div className="max-w-6xl mx-auto px-6 py-12">
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-8">
               <div>
                 <p className="text-white font-semibold text-sm mb-1">
                   <span className="text-accent-light">M</span>arket<span className="text-accent-light">J</span>ournal
                 </p>
-                <p className="text-gray-600 text-xs">
-                  The trading journal for options traders.
+                <p className="font-mono text-[11px] uppercase tracking-wider text-gray-600">
+                  The trading journal for options traders
                 </p>
               </div>
-              <div className="flex items-center gap-6 text-xs text-gray-500">
+              <div className="flex items-center gap-6 font-mono text-[11px] uppercase tracking-wider text-gray-500">
                 <Link href="/privacy" className="hover:text-gray-300 transition-colors">Privacy</Link>
                 <Link href="/terms" className="hover:text-gray-300 transition-colors">Terms</Link>
               </div>
