@@ -51,10 +51,20 @@ export default function NavBar() {
         <div className="flex items-center gap-6">
           <Link
             href="/"
-            className="text-base font-semibold tracking-tight text-white shrink-0"
+            className="flex items-center gap-2 shrink-0"
+            aria-label="MarketJournal home"
           >
-            <span className="text-accent-light">M</span>arket
-            <span className="text-accent-light">J</span>ournal
+            <svg viewBox="0 0 32 32" className="w-7 h-7" aria-hidden="true">
+              <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="7" fill="#0a0a0f" stroke="#818cf8" strokeWidth="1.5" />
+              <text x="16" y="17.5" textAnchor="middle" fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" fontWeight="700" fontSize="13">
+                <tspan fill="#ffffff">M</tspan><tspan fill="#818cf8">J</tspan>
+              </text>
+              <polyline points="8,26 12,24 16,25 20,22 24,23.5" fill="none" stroke="#34d399" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="text-base font-semibold tracking-tight text-white">
+              <span className="text-accent-light">M</span>arket
+              <span className="text-accent-light">J</span>ournal
+            </span>
           </Link>
 
           <SignedIn>
