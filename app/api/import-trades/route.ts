@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
+import { Fill, weightedAvg } from "@/lib/trade-math";
 import Papa from "papaparse";
 
 /* ---------- Canonical types ---------- */
@@ -20,8 +21,6 @@ type CanonicalFill = {
   amount: number;             // +credit for sells, -debit for buys (incl. fees if available)
   tradeDate: Date;
 };
-
-type Fill = { qty: number; price: number };
 
 type Group = {
   key: string;
@@ -77,13 +76,6 @@ function parseDate(str: string | undefined | null): Date | null {
   // Fallback to native parser
   const d = new Date(s);
   return Number.isNaN(+d) ? null : d;
-}
-
-function weightedAvg(fills: Fill[]): number | null {
-  const totalQty = fills.reduce((s, f) => s + f.qty, 0);
-  if (totalQty === 0) return null;
-  const value = fills.reduce((s, f) => s + f.price * f.qty, 0);
-  return value / totalQty;
 }
 
 /* ---------- Header utilities ---------- */

@@ -4,17 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { putPublicObject } from "@/lib/s3";
 import { rateLimit } from "@/lib/rate-limit";
 import { ensureUser } from "@/lib/ensure-user";
+import { parseFills, weightedAvg, computeRealizedPnl } from "@/lib/trade-math";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Fill = { qty: number; price: number };
-
 const MAX_TICKER_LENGTH = 10;
 const MAX_STRATEGY_LENGTH = 100;
 const MAX_NOTES_LENGTH = 2000;
-const MAX_FILLS = 50;
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_IMAGE_TYPES = new Set([
   "image/png",
@@ -22,35 +20,6 @@ const ALLOWED_IMAGE_TYPES = new Set([
   "image/webp",
   "image/gif",
 ]);
-
-function parseFills(raw: unknown): Fill[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .slice(0, MAX_FILLS)
-    .map((f) => ({ qty: Number(f?.qty), price: Number(f?.price) }))
-    .filter(
-      (f) =>
-        Number.isFinite(f.qty) &&
-        f.qty > 0 &&
-        Number.isFinite(f.price) &&
-        f.price >= 0,
-    );
-}
-
-function weightedAvg(fills: Fill[]): number | null {
-  const totalQty = fills.reduce((s, f) => s + f.qty, 0);
-  if (totalQty === 0) return null;
-  return fills.reduce((s, f) => s + f.price * f.qty, 0) / totalQty;
-}
-
-function computeRealizedPnl(buys: Fill[], sells: Fill[]): number {
-  const buyQty = buys.reduce((s, f) => s + f.qty, 0);
-  const sellQty = sells.reduce((s, f) => s + f.qty, 0);
-  const avgBuy = weightedAvg(buys);
-  const avgSell = weightedAvg(sells);
-  if (!avgBuy || !avgSell || buyQty === 0 || sellQty === 0) return 0;
-  return (avgSell - avgBuy) * 100 * Math.min(buyQty, sellQty);
-}
 
 function sanitizeString(val: unknown, maxLen: number): string {
   return String(val ?? "")
