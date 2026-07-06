@@ -136,6 +136,155 @@ export function getOptionsChain(symbol: string): Promise<OptionsChain | null> {
   return cachedJson(`chain:v1:${symbol}`, 300, () => fetchCboeChain(symbol));
 }
 
+export type GexStrikeRow = {
+  strike: number;
+  /** Net exposure per expiry column, aligned with GexProfile.expiries. */
+  byExpiry: number[];
+  net: number;
+  callGex: number;
+  putGex: number;
+};
+
+export type GexProfile = {
+  symbol: string;
+  spot: number;
+  metric: "gex" | "vex";
+  expiries: string[]; // column order, nearest first
+  strikes: GexStrikeRow[]; // sorted descending (highest strike first)
+  netTotal: number;
+  /** Approximate zero-gamma flip level (cumulative net crossing), null if no flip. */
+  zeroGamma: number | null;
+  /** Max pain strike for the front expiry. */
+  maxPain: number | null;
+  frontExpiry: string | null;
+  asOf: string;
+};
+
+const MAX_EXPIRIES = 8;
+const MAX_STRIKES = 36;
+const STRIKE_WINDOW_PCT = 0.12; // strikes within ±12% of spot
+
+/**
+ * Dealer-positioning exposure profile from a chain snapshot.
+ *
+ * GEX per contract = gamma × OI × 100 × spot² × 1% — dollar gamma per 1%
+ * spot move. VEX per contract = vega × OI × 100 — dollars per vol point.
+ * Convention: calls positive, puts negative (dealers assumed short puts /
+ * long calls). Zero-gamma is the cumulative-net sign flip across strikes,
+ * interpolated — an approximation of the "gamma flip" level.
+ */
+export function computeExposureProfile(
+  chain: OptionsChain,
+  metric: "gex" | "vex",
+): GexProfile {
+  const today = new Date().toISOString().slice(0, 10);
+  const { spot } = chain;
+
+  const live = chain.contracts.filter(
+    (c) =>
+      c.expiry >= today &&
+      c.openInterest > 0 &&
+      (metric === "gex" ? c.gamma != null : c.vega != null),
+  );
+
+  // Nearest expiries first, capped.
+  const expiries = Array.from(new Set(live.map((c) => c.expiry)))
+    .sort()
+    .slice(0, MAX_EXPIRIES);
+  const expiryIdx = new Map(expiries.map((e, i) => [e, i]));
+
+  // Strikes near spot, thinned to the closest MAX_STRIKES.
+  const lo = spot * (1 - STRIKE_WINDOW_PCT);
+  const hi = spot * (1 + STRIKE_WINDOW_PCT);
+  const strikeSet = Array.from(
+    new Set(live.filter((c) => c.strike >= lo && c.strike <= hi).map((c) => c.strike)),
+  )
+    .sort((a, b) => Math.abs(a - spot) - Math.abs(b - spot))
+    .slice(0, MAX_STRIKES)
+    .sort((a, b) => b - a); // render highest strike first
+  const strikeIdx = new Map(strikeSet.map((s, i) => [s, i]));
+
+  const rows: GexStrikeRow[] = strikeSet.map((strike) => ({
+    strike,
+    byExpiry: new Array(expiries.length).fill(0),
+    net: 0,
+    callGex: 0,
+    putGex: 0,
+  }));
+
+  const exposureOf = (c: ChainContract): number => {
+    const raw =
+      metric === "gex"
+        ? (c.gamma ?? 0) * c.openInterest * 100 * spot * spot * 0.01
+        : (c.vega ?? 0) * c.openInterest * 100;
+    return c.type === "CALL" ? raw : -raw;
+  };
+
+  for (const c of live) {
+    const si = strikeIdx.get(c.strike);
+    const ei = expiryIdx.get(c.expiry);
+    if (si == null || ei == null) continue;
+    const exp = exposureOf(c);
+    const row = rows[si];
+    row.byExpiry[ei] += exp;
+    row.net += exp;
+    if (c.type === "CALL") row.callGex += exp;
+    else row.putGex += exp;
+  }
+
+  const netTotal = rows.reduce((s, r) => s + r.net, 0);
+
+  // Zero-gamma: cumulative net from the lowest strike up; interpolate the flip.
+  let zeroGamma: number | null = null;
+  const asc = [...rows].sort((a, b) => a.strike - b.strike);
+  let cum = 0;
+  let prevCum = 0;
+  let prevStrike: number | null = null;
+  for (const r of asc) {
+    prevCum = cum;
+    cum += r.net;
+    if (prevStrike != null && prevCum !== 0 && Math.sign(prevCum) !== Math.sign(cum) && cum !== 0) {
+      const t = Math.abs(prevCum) / (Math.abs(prevCum) + Math.abs(cum));
+      zeroGamma = prevStrike + (r.strike - prevStrike) * t;
+      break;
+    }
+    prevStrike = r.strike;
+  }
+
+  // Max pain on the front expiry: strike minimizing total intrinsic payout.
+  const frontExpiry = expiries[0] ?? null;
+  let maxPain: number | null = null;
+  if (frontExpiry) {
+    const front = live.filter((c) => c.expiry === frontExpiry);
+    const candidates = Array.from(new Set(front.map((c) => c.strike))).sort((a, b) => a - b);
+    let best = Infinity;
+    for (const s of candidates) {
+      let payout = 0;
+      for (const c of front) {
+        if (c.type === "CALL" && s > c.strike) payout += (s - c.strike) * c.openInterest;
+        else if (c.type === "PUT" && s < c.strike) payout += (c.strike - s) * c.openInterest;
+      }
+      if (payout < best) {
+        best = payout;
+        maxPain = s;
+      }
+    }
+  }
+
+  return {
+    symbol: chain.symbol,
+    spot,
+    metric,
+    expiries,
+    strikes: rows,
+    netTotal,
+    zeroGamma,
+    maxPain,
+    frontExpiry,
+    asOf: chain.fetchedAt,
+  };
+}
+
 const MIN_VOLUME = 250;
 const MIN_VOL_OI_RATIO = 2;
 const MAX_ROWS_PER_SYMBOL = 15;

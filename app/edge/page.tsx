@@ -89,6 +89,12 @@ export default function EdgePage() {
         <p className="font-mono text-xs text-gray-500 mt-3">
           Contracts trading far above open interest — new positioning, ranked by premium.
         </p>
+        <div className="mt-4 flex gap-4 font-mono text-[11px] uppercase tracking-[0.2em]">
+          <span className="text-accent-light">01 Flow</span>
+          <Link href="/edge/gex" className="text-gray-500 hover:text-gray-300 transition-colors">
+            02 Exposure
+          </Link>
+        </div>
       </div>
 
       {/* Controls */}
