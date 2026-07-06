@@ -285,6 +285,57 @@ export function computeExposureProfile(
   };
 }
 
+export type NewsItem = {
+  id: string;
+  title: string;
+  publisher: string;
+  url: string;
+  publishedAt: string; // ISO
+  tickers: string[];
+};
+
+async function fetchYahooNews(symbol: string): Promise<NewsItem[]> {
+  const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(symbol)}&newsCount=10&quotesCount=0`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0" },
+      signal: controller.signal,
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const raw: unknown[] = Array.isArray(json?.news) ? json.news : [];
+    const items: NewsItem[] = [];
+    for (const n of raw as Record<string, unknown>[]) {
+      const title = String(n?.title ?? "").trim();
+      const link = String(n?.link ?? "");
+      const ts = Number(n?.providerPublishTime);
+      if (!title || !link.startsWith("http") || !Number.isFinite(ts)) continue;
+      items.push({
+        id: String(n?.uuid ?? link),
+        title,
+        publisher: String(n?.publisher ?? "").trim(),
+        url: link,
+        publishedAt: new Date(ts * 1000).toISOString(),
+        tickers: Array.isArray(n?.relatedTickers)
+          ? (n.relatedTickers as unknown[]).map(String).filter((t) => /^[A-Z.^-]{1,8}$/.test(t)).slice(0, 4)
+          : [],
+      });
+    }
+    return items;
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/** Ticker news with a 10-minute shared cache. */
+export function getTickerNews(symbol: string): Promise<NewsItem[]> {
+  return cachedJson(`news:v1:${symbol}`, 600, () => fetchYahooNews(symbol));
+}
+
 const MIN_VOLUME = 250;
 const MIN_VOL_OI_RATIO = 2;
 const MAX_ROWS_PER_SYMBOL = 15;

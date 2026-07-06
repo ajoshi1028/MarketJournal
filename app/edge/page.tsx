@@ -94,6 +94,9 @@ export default function EdgePage() {
           <Link href="/edge/gex" className="text-gray-500 hover:text-gray-300 transition-colors">
             02 Exposure
           </Link>
+          <Link href="/edge/news" className="text-gray-500 hover:text-gray-300 transition-colors">
+            03 News
+          </Link>
         </div>
       </div>
 
