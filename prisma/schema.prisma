@@ -14,6 +14,7 @@ model User {
   name      String?
   trades    TradeEntry[] @relation("UserTrades")
   account   Account?
+  tradingPlan     TradingPlan?
   journals        Journal[]
   coachingReports CoachingReport[]
   createdAt       DateTime     @default(now())
@@ -34,6 +35,31 @@ model Account {
   user      User     @relation(fields: [userId], references: [id])
   userId    String   @unique
   balance   Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// A trader's standing rules: account size, per-position sizing, exit targets,
+/// and a win-rate kill switch. One row per user; trades since startDate are
+/// measured against it.
+model TradingPlan {
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique
+
+  startingBalance Float
+  startDate       DateTime @db.Date
+
+  riskPct         Float // max % of account in one position
+  takeProfitPct   Float // target gain on a position
+  stopLossPct     Float // max loss on a position
+  targetWinRate   Float // % the plan assumes
+  maxTradesPerDay Int?
+
+  killWindow  Int   @default(20) // rolling closed-trade window
+  killFloor   Float @default(45) // win-rate % below which the kill switch trips
+  killRiskPct Float @default(1) // position size % while the switch is on
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
