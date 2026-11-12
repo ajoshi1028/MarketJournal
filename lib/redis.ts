@@ -32,12 +32,27 @@ export async function cachedJson<T>(
 ): Promise<T> {
   const r = getRedis();
 
+  // A cache must never be a point of failure. Only the Redis calls are
+  // guarded; an error from compute() itself still propagates to the caller.
   if (r) {
-    const hit = await r.get<T>(key);
-    if (hit != null) return hit;
-    const value = await compute();
-    await r.set(key, value, { ex: ttlSeconds });
-    return value;
+    let redisUp = true;
+    try {
+      const hit = await r.get<T>(key);
+      if (hit != null) return hit;
+    } catch (err) {
+      redisUp = false;
+      console.error("cachedJson: Redis unavailable, using in-memory cache:", err);
+    }
+
+    if (redisUp) {
+      const value = await compute();
+      try {
+        await r.set(key, value, { ex: ttlSeconds });
+      } catch (err) {
+        console.error("cachedJson: Redis write failed:", err);
+      }
+      return value;
+    }
   }
 
   const now = Date.now();
