@@ -53,6 +53,13 @@ export async function rateLimit(
   const limiter = getLimiter(limit, windowMs);
   if (!limiter) return fallbackRateLimit(key, limit, windowMs);
 
-  const result = await limiter.limit(key);
-  return { success: result.success, remaining: result.remaining };
+  // Fail open: a Redis outage must degrade to the per-instance limiter, not
+  // take every rate-limited route down with it.
+  try {
+    const result = await limiter.limit(key);
+    return { success: result.success, remaining: result.remaining };
+  } catch (err) {
+    console.error("rateLimit: Redis unavailable, using in-memory fallback:", err);
+    return fallbackRateLimit(key, limit, windowMs);
+  }
 }

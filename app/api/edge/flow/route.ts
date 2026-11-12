@@ -24,7 +24,14 @@ export async function GET(req: NextRequest) {
   if (!success)
     return NextResponse.json({ error: "Rate limit exceeded. Try again later." }, { status: 429 });
 
-  if (!(await isProUser(userId)))
+  let pro: boolean;
+  try {
+    pro = await isProUser(userId);
+  } catch (err) {
+    console.error("GET /api/edge/flow plan check failed:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+  if (!pro)
     return NextResponse.json(
       {
         error: "Unusual-activity screening is a Pro feature.",
