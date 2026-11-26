@@ -68,11 +68,16 @@ model TradeEntry {
   avgSellPrice Float?
   realizedPnl  Float?
 
+  /// Stable identity of a broker-imported position (contract + first fill
+  /// day); null for manual trades. Lets re-imports update instead of duplicate.
+  importKey String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   legs TradeLeg[] @relation("TradeLegs")
 
+  @@unique([userId, importKey])
   @@index([userId])
   @@index([userId, entryDate])
 }
