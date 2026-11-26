@@ -1,36 +1,21 @@
 // app/api/import-trades/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
-import { Fill, weightedAvg } from "@/lib/trade-math";
+import {
+  buildImportedTrades,
+  parseDate,
+  type CanonicalFill as PositionFill,
+  type Side,
+} from "@/lib/positions";
+import { syncImportedTrades } from "@/lib/import-sync";
 import Papa from "papaparse";
 
 /* ---------- Canonical types ---------- */
 
-type Side = "BUY" | "SELL";
-
-type CanonicalFill = {
+type CanonicalFill = PositionFill & {
   broker: string;
   raw: any;
-  instrument: string;         // e.g. "QQQ"
-  description: string | null; // e.g. "QQQ 11/10/2025 Put 616.00"
-  side: Side;
-  quantity: number;
-  price: number;
-  amount: number;             // +credit for sells, -debit for buys (incl. fees if available)
-  tradeDate: Date;
-};
-
-type Group = {
-  key: string;
-  ticker: string;
-  description: string | null;
-  buys: Fill[];
-  sells: Fill[];
-  firstBuyDate: Date | null;
-  lastSellDate: Date | null;
-  netAmount: number;
 };
 
 /* ---------- Small helpers ---------- */
@@ -53,29 +38,6 @@ function parseNumber(str: string | undefined | null): number | null {
 
   const n = Number(cleaned);
   return Number.isFinite(n) ? n : null;
-}
-
-function parseDate(str: string | undefined | null): Date | null {
-  if (!str) return null;
-  const s = String(str).trim();
-  if (!s) return null;
-
-  // Try MM/DD/YYYY or MM-DD-YYYY (common broker formats)
-  const parts = s.split(/[/-]/);
-  if (parts.length === 3) {
-    const [a, b, c] = parts;
-    const mm = Number(a);
-    const dd = Number(b);
-    const yyyy = Number(c.length === 2 ? "20" + c : c);
-    if (!Number.isNaN(mm) && !Number.isNaN(dd) && !Number.isNaN(yyyy)) {
-      const d = new Date(yyyy, mm - 1, dd);
-      if (!Number.isNaN(+d)) return d;
-    }
-  }
-
-  // Fallback to native parser
-  const d = new Date(s);
-  return Number.isNaN(+d) ? null : d;
 }
 
 /* ---------- Header utilities ---------- */
@@ -384,117 +346,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3) Group canonical fills into trades
-    const groups = new Map<string, Group>();
+    // 3) Build positions: open/closed status, realized P&L, import key
+    const built = buildImportedTrades(fills);
 
-    for (const f of fills) {
-      const desc = f.description ?? "";
-      const key = `${f.instrument}|${desc}`;
-
-      let g = groups.get(key);
-      if (!g) {
-        g = {
-          key,
-          ticker: f.instrument,
-          description: f.description,
-          buys: [],
-          sells: [],
-          firstBuyDate: null,
-          lastSellDate: null,
-          netAmount: 0,
-        };
-        groups.set(key, g);
-      }
-
-      g.netAmount += f.amount;
-      const fill: Fill = { qty: f.quantity, price: f.price };
-
-      if (f.side === "BUY") {
-        g.buys.push(fill);
-        if (!g.firstBuyDate || f.tradeDate < g.firstBuyDate) {
-          g.firstBuyDate = f.tradeDate;
-        }
-      } else {
-        g.sells.push(fill);
-        if (!g.lastSellDate || f.tradeDate > g.lastSellDate) {
-          g.lastSellDate = f.tradeDate;
-        }
-      }
-    }
-
-    // Parse option details from description like "QQQ 5/21/2026 Put $712.00"
-    function parseOptionFromDesc(desc: string | null): {
-      optionType: "CALL" | "PUT" | null;
-      strike: number | null;
-      expiry: Date | null;
-    } {
-      if (!desc) return { optionType: null, strike: null, expiry: null };
-      const callMatch = /\bCall\b/i.test(desc);
-      const putMatch = /\bPut\b/i.test(desc);
-      const optionType = callMatch ? "CALL" as const : putMatch ? "PUT" as const : null;
-
-      // Try to extract strike price (number after Call/Put, or $ prefixed)
-      let strike: number | null = null;
-      const strikeMatch = desc.match(/(?:Call|Put)\s+\$?([\d,]+(?:\.\d+)?)/i);
-      if (strikeMatch) {
-        strike = parseFloat(strikeMatch[1].replace(/,/g, ""));
-        if (!Number.isFinite(strike)) strike = null;
-      }
-
-      // Try to extract expiry date from description
-      const dateMatch = desc.match(/(\d{1,2}\/\d{1,2}\/\d{2,4})/);
-      let expiry: Date | null = null;
-      if (dateMatch) {
-        expiry = parseDate(dateMatch[1]);
-      }
-
-      return { optionType, strike, expiry };
-    }
-
-    const tradesToCreate: any[] = [];
-
-    for (const g of groups.values()) {
-      const totalBuyQty = g.buys.reduce((s, f) => s + f.qty, 0);
-      const totalSellQty = g.sells.reduce((s, f) => s + f.qty, 0);
-
-      if (totalBuyQty === 0 && totalSellQty === 0) continue;
-
-      const avgBuyPrice = weightedAvg(g.buys);
-      const avgSellPrice = weightedAvg(g.sells);
-      const realizedPnl = g.netAmount;
-
-      let outcome: "PROFIT" | "LOSS" | null = null;
-      if (realizedPnl > 0) outcome = "PROFIT";
-      else if (realizedPnl < 0) outcome = "LOSS";
-
-      const { optionType, strike, expiry } = parseOptionFromDesc(g.description);
-
-      const positionType: "LONG" | "SHORT" =
-        optionType === "PUT" ? "SHORT" : "LONG";
-
-      tradesToCreate.push({
-        userId,
-        ticker: g.ticker,
-        strategy: g.description?.slice(0, 80) ?? null,
-        positionType,
-        optionType,
-        strike,
-        expiry,
-        entryDate: g.firstBuyDate ?? g.lastSellDate ?? new Date(),
-        sellDate: g.lastSellDate ?? g.firstBuyDate ?? null,
-        buyFills: g.buys.length ? g.buys : undefined,
-        sellFills: g.sells.length ? g.sells : undefined,
-        totalBuyQty,
-        totalSellQty,
-        avgBuyPrice,
-        avgSellPrice,
-        realizedPnl,
-        outcome,
-        notes: g.description,
-      });
-    }
-
-    if (!tradesToCreate.length) {
+    if (!built.length) {
       return NextResponse.json(
         {
           error:
@@ -504,17 +359,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const created = await prisma.tradeEntry.createMany({
-      data: tradesToCreate,
-    });
+    // 4) Save idempotently: a re-import updates positions (e.g. one that has
+    //    since closed) instead of duplicating them.
+    const { created, updated, unchanged } = await syncImportedTrades(userId, built);
+
+    const open = built.filter((t) => t.status === "OPEN").length;
+    const parts = [`${created} new`];
+    if (updated) parts.push(`${updated} updated`);
+    if (unchanged) parts.push(`${unchanged} already up to date`);
 
     return NextResponse.json(
       {
-        message: `Imported ${created.count} trades from ${broker}.`,
+        message:
+          `Imported from ${broker}: ${parts.join(", ")}.` +
+          (open ? ` ${open} still open (not counted as wins or losses yet).` : ""),
+        created,
+        updated,
+        unchanged,
+        open,
       },
       { status: 200 }
     );
   } catch (err: any) {
+    console.error("POST /api/import-trades error:", err);
     return NextResponse.json(
       { error: "Import failed. Please check your file format and try again." },
       { status: 500 }
